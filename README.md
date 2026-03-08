@@ -135,3 +135,46 @@ energy-platform/
 Create an account via the signup page, or use:
 - Email: any valid email
 - Password: min 6 characters
+
+## Dataset Information
+
+The platform uses energy consumption datasets combined with environmental parameters to train AI models for forecasting and anomaly detection.
+
+### Dataset Features
+
+The dataset contains the following attributes:
+
+* Temperature
+* Humidity
+* Wind Speed
+* General Diffuse Flow
+* Diffuse Flow
+* Power Consumption Zone 1
+* Power Consumption Zone 2
+* Power Consumption Zone 3
+
+These variables allow the AI system to understand how environmental factors influence electricity consumption patterns.
+
+### Dataset Source
+
+The dataset used in this project is based on publicly available energy consumption datasets and synthetic data generation techniques to simulate realistic energy usage scenarios.
+
+### Data Processing
+
+Before training the AI models, the dataset undergoes preprocessing steps:
+
+* Missing value handling
+* Feature normalization
+* Time-series alignment
+* Data validation
+
+### AI Model Training
+
+The processed dataset is used to train machine learning models for:
+
+* Energy demand forecasting
+* Energy anomaly detection
+* Load optimization recommendations
+
+These models learn patterns in energy usage and environmental conditions to generate intelligent predictions for the dashboard.
+
