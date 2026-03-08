@@ -61,8 +61,13 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    // Clear state and fetch reports when component mounts or user changes
+    setReports([]);
+    setSelectedReportId(null);
+    setSelectedReportData(null);
+    setShowUpload(false);
     fetchReports();
-  }, [fetchReports]);
+  }, [fetchReports, user?.email]);
 
   const handleSelectReport = async (id: number) => {
     if (id === selectedReportId) return;

@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
+    // Force page reload to clear all state
+    window.location.href = "/login";
   }, []);
 
   const resetInactivityTimer = useCallback(() => {
