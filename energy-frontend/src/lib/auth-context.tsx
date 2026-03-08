@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
 });
 
-const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

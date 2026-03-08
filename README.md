@@ -2,7 +2,32 @@
 
 An AI-powered full-stack platform for energy consumption analytics, forecasting, anomaly detection, cost optimization, and sustainability scoring.
 
-## Quick Start
+## Overview
+
+AI Energy Intelligence Platform is a full-stack analytics system that uses machine learning to analyze energy consumption patterns, forecast future demand, detect anomalies, and recommend cost optimization strategies.
+
+The platform combines modern web technologies with AI models to help users monitor energy usage, identify inefficiencies, and improve sustainability through intelligent insights.
+
+Key capabilities include:
+
+• Energy demand forecasting using deep learning (LSTM)
+• AI-powered anomaly detection for unusual energy usage
+• Load optimization recommendations for cost savings
+• Sustainability and energy health scoring
+• Interactive analytics dashboard
+
+## Features
+
+• AI-based energy consumption forecasting
+• Real-time anomaly detection and alerts
+• Cost optimization recommendations
+• Energy health and sustainability scoring
+• Interactive analytics dashboard
+• Secure authentication system (JWT)
+• Clean full-stack architecture (React + FastAPI)
+
+
+## Installation & Setup
 
 ### 1. Backend Setup
 ```bash
@@ -112,12 +137,12 @@ energy-platform/
 
 ## Tech Stack
 
-| Layer    | Technology                                    |
-|----------|-----------------------------------------------|
-| Frontend | React, Vite, TypeScript, TailwindCSS, Recharts |
-| Backend  | FastAPI, SQLAlchemy, SQLite, JWT, bcrypt       |
-| AI/ML    | PyTorch (LSTM), scikit-learn, pandas, numpy    |
-
+| Layer    | Technology                                               |
+|----------|----------------------------------------------------------|
+| Frontend | React, Vite, TypeScript, TailwindCSS, Recharts           |
+| Backend  | FastAPI, SQLAlchemy, SQLite, JWT, bcrypt                 |
+| AI/ML    | PyTorch (LSTM), scikit-learn, pandas, numpy              |
+| Data     | Synthetic + energy consumption datasets from kaggle.com  |
 
 ## API Endpoints
 
