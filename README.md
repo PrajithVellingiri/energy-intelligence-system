@@ -57,6 +57,49 @@ npm run dev
 - API Docs: http://localhost:8000/docs
 
 
+## Running with Ngrok (Public Access)
+
+To make the application accessible from other devices or for demos:
+
+### 1. Start Backend
+```bash
+cd energy-backend
+poetry run fastapi dev app/main.py --port 8000 --host 0.0.0.0
+```
+
+### 2. Expose Backend with Ngrok
+```bash
+# In a new terminal
+ngrok http 8000
+```
+
+Copy the HTTPS URL (e.g., `https://abc123.ngrok-free.app`)
+
+### 3. Configure Frontend
+```bash
+cd energy-frontend
+
+# Update .env file with your ngrok URL
+echo "VITE_API_URL=https://abc123.ngrok-free.app" > .env
+```
+
+### 4. Start Frontend
+```bash
+npm run dev
+```
+
+### 5. Access the App
+- Local: http://localhost:5173
+- Or expose frontend with ngrok: `ngrok http 5173`
+
+**Note:** The backend CORS is configured to accept requests from all origins, making it compatible with both localhost and ngrok URLs.
+
+**Switching back to localhost:**
+```bash
+echo "VITE_API_URL=http://localhost:8000" > .env
+```
+
+
 ## Architecture
 
 ```
@@ -203,3 +246,41 @@ The processed dataset is used to train machine learning models for:
 
 These models learn patterns in energy usage and environmental conditions to generate intelligent predictions for the dashboard.
 
+## Future Enhancements
+
+The following features are planned to further improve the platform’s capabilities and user experience:
+
+**Admin Analytics Dashboard**
+
+A dedicated admin panel that provides insights into platform usage and system performance, including:
+
+* Model training status and training pipeline monitoring
+* Total number of registered users
+* Platform usage frequency and activity statistics
+* System-level analytics for monitoring AI model performance
+
+**User Feedback & Communication**
+
+To improve user engagement and support:
+
+* User review and rating system
+* Contact Us section for queries, feedback, and support requests
+* Feedback collection to continuously improve platform recommendations
+
+**Interactive Energy Forecasting**
+
+Enhanced forecasting tools that allow users to explore predictions more flexibly:
+
+* Interactive forecasting charts
+* Ability to generate energy demand forecasts for any selected future date
+* Dynamic visualization of prediction trends and seasonal patterns
+
+**Advanced Optimization Insights**
+
+Improved optimization recommendations that provide clearer financial impact analysis:
+
+* Detailed breakdown of each recommended fix
+* Estimated cost savings for each optimization suggestion
+* Comparative insights showing potential savings before and after optimization
+
+These enhancements aim to transform the platform into a more intelligent, user-friendly, and decision-support system for energy management.

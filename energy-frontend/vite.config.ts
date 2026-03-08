@@ -9,5 +9,12 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+
+  server: {
+    host: true,
+    allowedHosts: [
+      "hayes-subglobular-gianni.ngrok-free.dev"
+    ]
+  },
 })
 
