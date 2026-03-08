@@ -1,0 +1,807 @@
+From 4396d5656c254915bcd14dc20c5a45fbee5ced76 Mon Sep 17 00:00:00 2001
+From: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date: Sun, 8 Mar 2026 06:55:46 +0000
+Subject: [PATCH] feat: persist analysis reports per user with history sidebar
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Add AnalysisReport DB model linked to user (stores full JSON result + summary fields)
+- Modify analyze-csv endpoint to save report after analysis
+- Add GET /api/reports (list user's reports), GET /api/reports/:id, DELETE /api/reports/:id
+- Add listReports, getReport, deleteReport to frontend API layer
+- Rewrite DashboardPage with report history sidebar (view old, upload new, delete)
+- UploadAnalysisPanel now accepts savedReport prop for read-only viewing
+- Each report is independent — no overlap between analyses
+
+Co-Authored-By: PRAJITH VELLINGIRI 25CSR213 <prajithvellingiri.25cse@kongu.edu>
+---
+ .../app/models_db/analysis_report.py          |  30 ++
+ energy-backend/app/models_db/database.py      |   1 +
+ energy-backend/app/routes/ai_routes.py        | 111 +++++-
+ .../src/components/UploadAnalysisPanel.tsx    | 160 +++++----
+ energy-frontend/src/lib/api.ts                |   5 +-
+ energy-frontend/src/pages/DashboardPage.tsx   | 326 ++++++++++++++++--
+ 6 files changed, 532 insertions(+), 101 deletions(-)
+ create mode 100644 energy-backend/app/models_db/analysis_report.py
+
+diff --git a/energy-backend/app/models_db/analysis_report.py b/energy-backend/app/models_db/analysis_report.py
+new file mode 100644
+index 0000000..0f39ca1
+--- /dev/null
++++ b/energy-backend/app/models_db/analysis_report.py
+@@ -0,0 +1,30 @@
++"""
++AnalysisReport model - stores persisted analysis results linked to a user.
++Each report is an independent snapshot of a CSV analysis.
++"""
++
++from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey
++from sqlalchemy.sql import func
++from app.models_db.database import Base
++
++
++class AnalysisReport(Base):
++    __tablename__ = "analysis_reports"
++
++    id = Column(Integer, primary_key=True, index=True)
++    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
++    filename = Column(String, nullable=False)
++    data_hash = Column(String, nullable=False)
++    record_count = Column(Integer, nullable=False)
++    # Store the full analysis result as JSON text
++    result_json = Column(Text, nullable=False)
++    # Summary fields for quick display in the report list
++    avg_24h = Column(Float, nullable=True)
++    max_24h = Column(Float, nullable=True)
++    health_score = Column(Float, nullable=True)
++    health_grade = Column(String, nullable=True)
++    anomaly_count = Column(Integer, nullable=True)
++    total_records = Column(Integer, nullable=True)
++    date_range_start = Column(String, nullable=True)
++    date_range_end = Column(String, nullable=True)
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
+diff --git a/energy-backend/app/models_db/database.py b/energy-backend/app/models_db/database.py
+index 52df5b7..d170a44 100644
+--- a/energy-backend/app/models_db/database.py
++++ b/energy-backend/app/models_db/database.py
+@@ -20,6 +20,7 @@ async def init_db():
+     # Import all models so Base.metadata knows about them
+     from app.models_db.user import User  # noqa: F401
+     from app.models_db.trained_dataset import TrainedDataset  # noqa: F401
++    from app.models_db.analysis_report import AnalysisReport  # noqa: F401
+     async with engine.begin() as conn:
+         await conn.run_sync(Base.metadata.create_all)
+ 
+diff --git a/energy-backend/app/routes/ai_routes.py b/energy-backend/app/routes/ai_routes.py
+index 7661c4c..c431ed8 100644
+--- a/energy-backend/app/routes/ai_routes.py
++++ b/energy-backend/app/routes/ai_routes.py
+@@ -2,9 +2,11 @@
+ AI API routes: CSV upload, analysis, and training.
+ All routes are protected by JWT authentication.
+ The dashboard is now entirely CSV-driven - no sample data is served.
++Analysis reports are persisted per-user so they can be viewed on subsequent logins.
+ """
+ 
+ import io
++import json
+ import pandas as pd
+ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+ from sqlalchemy.ext.asyncio import AsyncSession
+@@ -13,6 +15,7 @@ from app.services.auth_service import get_current_user_id
+ from app.services.ai_service import ai_service, compute_data_hash
+ from app.models_db.database import get_db
+ from app.models_db.trained_dataset import TrainedDataset
++from app.models_db.analysis_report import AnalysisReport
+ from preprocessing.csv_analyzer import SmartCSVAnalyzer
+ 
+ router = APIRouter(prefix="/api", tags=["AI Analytics"])
+@@ -110,8 +113,114 @@ async def analyze_csv(
+         analysis_result["training_info"] = training_info
+         analysis_result["data_hash"] = data_hash
+         analysis_result["already_trained_before"] = already_trained
+-        return analysis_result
+     except ValueError as e:
+         raise HTTPException(status_code=400, detail=str(e))
+     except Exception as e:
+         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
++
++    # Persist the report for this user
++    summary = analysis_result.get("dashboard_summary", {})
++    health = analysis_result.get("analysis", {}).get("health_score") or {}
++    anomalies_info = analysis_result.get("analysis", {}).get("anomalies") or {}
++    anomaly_summary = anomalies_info.get("summary", {})
++
++    report = AnalysisReport(
++        user_id=user_id,
++        filename=file.filename,
++        data_hash=data_hash,
++        record_count=len(raw_df),
++        result_json=json.dumps(analysis_result, default=str),
++        avg_24h=summary.get("avg_24h"),
++        max_24h=summary.get("max_24h"),
++        health_score=health.get("energy_health_score"),
++        health_grade=health.get("grade"),
++        anomaly_count=anomaly_summary.get("total_anomalies"),
++        total_records=summary.get("total_records"),
++        date_range_start=summary.get("date_range", {}).get("start"),
++        date_range_end=summary.get("date_range", {}).get("end"),
++    )
++    db.add(report)
++    await db.commit()
++    await db.refresh(report)
++
++    # Add the report ID to the response
++    analysis_result["report_id"] = report.id
++
++    return analysis_result
++
++
++@router.get("/reports")
++async def list_reports(
++    user_id: int = Depends(get_current_user_id),
++    db: AsyncSession = Depends(get_db),
++):
++    """List all analysis reports for the current user, newest first."""
++    result = await db.execute(
++        select(AnalysisReport)
++        .where(AnalysisReport.user_id == user_id)
++        .order_by(AnalysisReport.created_at.desc())
++    )
++    reports = result.scalars().all()
++
++    return [
++        {
++            "id": r.id,
++            "filename": r.filename,
++            "record_count": r.record_count,
++            "avg_24h": r.avg_24h,
++            "max_24h": r.max_24h,
++            "health_score": r.health_score,
++            "health_grade": r.health_grade,
++            "anomaly_count": r.anomaly_count,
++            "total_records": r.total_records,
++            "date_range_start": r.date_range_start,
++            "date_range_end": r.date_range_end,
++            "created_at": r.created_at.isoformat() if r.created_at else None,
++        }
++        for r in reports
++    ]
++
++
++@router.get("/reports/{report_id}")
++async def get_report(
++    report_id: int,
++    user_id: int = Depends(get_current_user_id),
++    db: AsyncSession = Depends(get_db),
++):
++    """Get the full analysis result for a specific report owned by the current user."""
++    result = await db.execute(
++        select(AnalysisReport).where(
++            AnalysisReport.id == report_id,
++            AnalysisReport.user_id == user_id,
++        )
++    )
++    report = result.scalar_one_or_none()
++    if not report:
++        raise HTTPException(status_code=404, detail="Report not found.")
++
++    analysis_result = json.loads(report.result_json)
++    analysis_result["report_id"] = report.id
++    analysis_result["created_at"] = report.created_at.isoformat() if report.created_at else None
++    return analysis_result
++
++
++@router.delete("/reports/{report_id}")
++async def delete_report(
++    report_id: int,
++    user_id: int = Depends(get_current_user_id),
++    db: AsyncSession = Depends(get_db),
++):
++    """Delete a specific report owned by the current user."""
++    result = await db.execute(
++        select(AnalysisReport).where(
++            AnalysisReport.id == report_id,
++            AnalysisReport.user_id == user_id,
++        )
++    )
++    report = result.scalar_one_or_none()
++    if not report:
++        raise HTTPException(status_code=404, detail="Report not found.")
++
++    await db.delete(report)
++    await db.commit()
++    return {"detail": "Report deleted successfully."}
+diff --git a/energy-frontend/src/components/UploadAnalysisPanel.tsx b/energy-frontend/src/components/UploadAnalysisPanel.tsx
+index 1cdb3a0..c79f296 100644
+--- a/energy-frontend/src/components/UploadAnalysisPanel.tsx
++++ b/energy-frontend/src/components/UploadAnalysisPanel.tsx
+@@ -1,4 +1,4 @@
+-import { useState, useRef } from "react";
++import { useState, useRef, useEffect } from "react";
+ import { analyticsAPI } from "../lib/api";
+ import {
+   LineChart,
+@@ -168,7 +168,17 @@ interface AnalysisResult {
+ /*  Component                                                          */
+ /* ------------------------------------------------------------------ */
+ 
+-export default function UploadAnalysisPanel() {
++interface UploadAnalysisPanelProps {
++  /** If provided, render this saved report in read-only mode (no upload UI). */
++  savedReport?: unknown;
++  /** Called after a new CSV is successfully uploaded & analyzed. */
++  onUploadComplete?: () => void;
++}
++
++export default function UploadAnalysisPanel({
++  savedReport,
++  onUploadComplete,
++}: UploadAnalysisPanelProps) {
+   const [file, setFile] = useState<File | null>(null);
+   const [loading, setLoading] = useState(false);
+   const [error, setError] = useState("");
+@@ -176,6 +186,19 @@ export default function UploadAnalysisPanel() {
+   const [activeSection, setActiveSection] = useState<string>("detection");
+   const fileInputRef = useRef<HTMLInputElement>(null);
+ 
++  // When a saved report is provided, populate the result state directly
++  useEffect(() => {
++    if (savedReport) {
++      setResult(savedReport as AnalysisResult);
++      setActiveSection("summary");
++      setFile(null);
++      setError("");
++    } else {
++      setResult(null);
++      setActiveSection("detection");
++    }
++  }, [savedReport]);
++
+   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+     const f = e.target.files?.[0];
+     if (f) {
+@@ -193,6 +216,7 @@ export default function UploadAnalysisPanel() {
+       const res = await analyticsAPI.analyzeCSV(file);
+       setResult(res.data);
+       setActiveSection("summary");
++      onUploadComplete?.();
+     } catch (err: unknown) {
+       const axiosErr = err as { response?: { data?: { detail?: string } } };
+       setError(
+@@ -218,81 +242,85 @@ export default function UploadAnalysisPanel() {
+     { id: "health", label: "Health Score", icon: Shield },
+   ];
+ 
++  const isViewingSaved = !!savedReport;
++
+   return (
+     <div className="space-y-6">
+-      {/* Upload Card */}
+-      <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+-        <div className="flex items-center gap-3 mb-6">
+-          <div className="w-10 h-10 bg-purple-600/20 rounded-xl flex items-center justify-center">
+-            <Upload className="w-5 h-5 text-purple-400" />
+-          </div>
+-          <div>
+-            <h3 className="text-lg font-semibold text-white">Upload & Analyze CSV</h3>
+-            <p className="text-sm text-slate-400">
+-              Upload any energy consumption CSV - AI will auto-detect columns and analyze
+-            </p>
++      {/* Upload Card — hidden when viewing a saved report */}
++      {!isViewingSaved && (
++        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
++          <div className="flex items-center gap-3 mb-6">
++            <div className="w-10 h-10 bg-purple-600/20 rounded-xl flex items-center justify-center">
++              <Upload className="w-5 h-5 text-purple-400" />
++            </div>
++            <div>
++              <h3 className="text-lg font-semibold text-white">Upload & Analyze CSV</h3>
++              <p className="text-sm text-slate-400">
++                Upload any energy consumption CSV - AI will auto-detect columns and analyze
++              </p>
++            </div>
+           </div>
+-        </div>
+ 
+-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+-          <div className="flex-1 w-full">
+-            <input
+-              type="file"
+-              accept=".csv"
+-              ref={fileInputRef}
+-              onChange={handleFileChange}
+-              className="hidden"
+-            />
++          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
++            <div className="flex-1 w-full">
++              <input
++                type="file"
++                accept=".csv"
++                ref={fileInputRef}
++                onChange={handleFileChange}
++                className="hidden"
++              />
++              <button
++                onClick={() => fileInputRef.current?.click()}
++                className="w-full border-2 border-dashed border-slate-600 hover:border-purple-500 rounded-xl p-6 text-center transition-colors group"
++              >
++                <FileText className="w-8 h-8 text-slate-500 group-hover:text-purple-400 mx-auto mb-2 transition-colors" />
++                {file ? (
++                  <div>
++                    <p className="text-white font-medium">{file.name}</p>
++                    <p className="text-sm text-slate-400">
++                      {(file.size / 1024).toFixed(1)} KB - Click to change
++                    </p>
++                  </div>
++                ) : (
++                  <div>
++                    <p className="text-slate-300 group-hover:text-white transition-colors">
++                      Click to select CSV file
++                    </p>
++                    <p className="text-xs text-slate-500 mt-1">
++                      Supports any energy consumption CSV format
++                    </p>
++                  </div>
++                )}
++              </button>
++            </div>
+             <button
+-              onClick={() => fileInputRef.current?.click()}
+-              className="w-full border-2 border-dashed border-slate-600 hover:border-purple-500 rounded-xl p-6 text-center transition-colors group"
++              onClick={handleUpload}
++              disabled={!file || loading}
++              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+             >
+-              <FileText className="w-8 h-8 text-slate-500 group-hover:text-purple-400 mx-auto mb-2 transition-colors" />
+-              {file ? (
+-                <div>
+-                  <p className="text-white font-medium">{file.name}</p>
+-                  <p className="text-sm text-slate-400">
+-                    {(file.size / 1024).toFixed(1)} KB - Click to change
+-                  </p>
+-                </div>
++              {loading ? (
++                <>
++                  <Loader2 className="w-4 h-4 animate-spin" />
++                  Analyzing...
++                </>
+               ) : (
+-                <div>
+-                  <p className="text-slate-300 group-hover:text-white transition-colors">
+-                    Click to select CSV file
+-                  </p>
+-                  <p className="text-xs text-slate-500 mt-1">
+-                    Supports any energy consumption CSV format
+-                  </p>
+-                </div>
++                <>
++                  <Zap className="w-4 h-4" />
++                  Analyze
++                </>
+               )}
+             </button>
+           </div>
+-          <button
+-            onClick={handleUpload}
+-            disabled={!file || loading}
+-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+-          >
+-            {loading ? (
+-              <>
+-                <Loader2 className="w-4 h-4 animate-spin" />
+-                Analyzing...
+-              </>
+-            ) : (
+-              <>
+-                <Zap className="w-4 h-4" />
+-                Analyze
+-              </>
+-            )}
+-          </button>
+-        </div>
+ 
+-        {error && (
+-          <div className="mt-4 bg-red-900/30 border border-red-800 rounded-xl p-4 flex items-start gap-3">
+-            <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+-            <p className="text-red-300 text-sm">{error}</p>
+-          </div>
+-        )}
+-      </div>
++          {error && (
++            <div className="mt-4 bg-red-900/30 border border-red-800 rounded-xl p-4 flex items-start gap-3">
++              <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
++              <p className="text-red-300 text-sm">{error}</p>
++            </div>
++          )}
++        </div>
++      )}
+ 
+       {/* Results */}
+       {result && (
+diff --git a/energy-frontend/src/lib/api.ts b/energy-frontend/src/lib/api.ts
+index 16820be..dfa456f 100644
+--- a/energy-frontend/src/lib/api.ts
++++ b/energy-frontend/src/lib/api.ts
+@@ -39,7 +39,7 @@ export const authAPI = {
+     api.post("/auth/login", data),
+ };
+ 
+-// AI Analytics API - CSV-driven (no sample data endpoints)
++// AI Analytics API - CSV-driven with persistent reports
+ export const analyticsAPI = {
+   getModelStatus: () => api.get("/api/model-status"),
+   analyzeCSV: (file: File) => {
+@@ -50,6 +50,9 @@ export const analyticsAPI = {
+       timeout: 300000, // 5 min timeout for training + analysis
+     });
+   },
++  listReports: () => api.get("/api/reports"),
++  getReport: (reportId: number) => api.get(`/api/reports/${reportId}`),
++  deleteReport: (reportId: number) => api.delete(`/api/reports/${reportId}`),
+ };
+ 
+ export default api;
+diff --git a/energy-frontend/src/pages/DashboardPage.tsx b/energy-frontend/src/pages/DashboardPage.tsx
+index 5ed5bb8..b152f35 100644
+--- a/energy-frontend/src/pages/DashboardPage.tsx
++++ b/energy-frontend/src/pages/DashboardPage.tsx
+@@ -1,17 +1,135 @@
++import { useState, useEffect, useCallback } from "react";
+ import { useNavigate } from "react-router-dom";
+ import { useAuth } from "../lib/auth-context";
++import { analyticsAPI } from "../lib/api";
+ import UploadAnalysisPanel from "../components/UploadAnalysisPanel";
+-import { Zap, LogOut, User, Upload, FileText } from "lucide-react";
++import {
++  Zap,
++  LogOut,
++  User,
++  Upload,
++  FileText,
++  Clock,
++  Trash2,
++  ChevronRight,
++  Plus,
++  BarChart3,
++  Shield,
++  AlertTriangle,
++  Loader2,
++} from "lucide-react";
++
++interface ReportSummary {
++  id: number;
++  filename: string;
++  record_count: number;
++  avg_24h: number | null;
++  max_24h: number | null;
++  health_score: number | null;
++  health_grade: string | null;
++  anomaly_count: number | null;
++  total_records: number | null;
++  date_range_start: string | null;
++  date_range_end: string | null;
++  created_at: string | null;
++}
+ 
+ export default function DashboardPage() {
+   const { user, logout } = useAuth();
+   const navigate = useNavigate();
+ 
++  const [reports, setReports] = useState<ReportSummary[]>([]);
++  const [loadingReports, setLoadingReports] = useState(true);
++  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
++  const [selectedReportData, setSelectedReportData] = useState<unknown>(null);
++  const [loadingReport, setLoadingReport] = useState(false);
++  const [showUpload, setShowUpload] = useState(false);
++  const [deletingId, setDeletingId] = useState<number | null>(null);
++
++  const fetchReports = useCallback(async () => {
++    try {
++      setLoadingReports(true);
++      const res = await analyticsAPI.listReports();
++      setReports(res.data);
++    } catch {
++      // ignore
++    } finally {
++      setLoadingReports(false);
++    }
++  }, []);
++
++  useEffect(() => {
++    fetchReports();
++  }, [fetchReports]);
++
++  const handleSelectReport = async (id: number) => {
++    if (id === selectedReportId) return;
++    setSelectedReportId(id);
++    setShowUpload(false);
++    setLoadingReport(true);
++    try {
++      const res = await analyticsAPI.getReport(id);
++      setSelectedReportData(res.data);
++    } catch {
++      setSelectedReportData(null);
++    } finally {
++      setLoadingReport(false);
++    }
++  };
++
++  const handleDeleteReport = async (id: number) => {
++    if (!window.confirm("Delete this report? This cannot be undone.")) return;
++    setDeletingId(id);
++    try {
++      await analyticsAPI.deleteReport(id);
++      setReports((prev) => prev.filter((r) => r.id !== id));
++      if (selectedReportId === id) {
++        setSelectedReportId(null);
++        setSelectedReportData(null);
++      }
++    } catch {
++      // ignore
++    } finally {
++      setDeletingId(null);
++    }
++  };
++
++  const handleNewUpload = () => {
++    setSelectedReportId(null);
++    setSelectedReportData(null);
++    setShowUpload(true);
++  };
++
++  const handleUploadComplete = () => {
++    // Refresh the report list after a new upload
++    fetchReports();
++  };
++
+   const handleLogout = () => {
+     logout();
+     navigate("/login");
+   };
+ 
++  const formatDate = (dateStr: string | null) => {
++    if (!dateStr) return "—";
++    const d = new Date(dateStr);
++    return d.toLocaleDateString("en-US", {
++      month: "short",
++      day: "numeric",
++      year: "numeric",
++      hour: "2-digit",
++      minute: "2-digit",
++    });
++  };
++
++  const gradeColor = (grade: string | null) => {
++    if (!grade) return "text-slate-400";
++    if (grade.startsWith("A")) return "text-green-400";
++    if (grade === "B") return "text-blue-400";
++    if (grade === "C") return "text-yellow-400";
++    return "text-red-400";
++  };
++
+   return (
+     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950">
+       {/* Top Navigation */}
+@@ -44,43 +162,185 @@ export default function DashboardPage() {
+         </div>
+       </nav>
+ 
+-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+-        {/* Welcome Banner */}
+-        <div className="bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-blue-600/20 border border-blue-700/30 rounded-2xl p-6 mb-8">
+-          <div className="flex items-start gap-4">
+-            <div className="w-12 h-12 bg-blue-600/30 rounded-xl flex items-center justify-center shrink-0">
+-              <Upload className="w-6 h-6 text-blue-400" />
+-            </div>
+-            <div>
+-              <h2 className="text-xl font-bold text-white mb-1">
+-                Welcome{user?.username ? `, ${user.username}` : ""}
+-              </h2>
+-              <p className="text-sm text-slate-300">
+-                Upload a CSV file with your energy consumption data to get AI-powered analytics,
+-                forecasting, anomaly detection, and optimization recommendations.
+-              </p>
+-              <div className="flex items-center gap-4 mt-3 text-xs text-slate-400">
+-                <span className="flex items-center gap-1">
+-                  <FileText className="w-3.5 h-3.5" />
+-                  CSV format with timestamp &amp; energy columns
+-                </span>
+-                <span className="flex items-center gap-1">
+-                  <Zap className="w-3.5 h-3.5" />
+-                  Auto-detects column types
+-                </span>
++      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
++        <div className="flex flex-col lg:flex-row gap-6">
++          {/* Sidebar: Report History */}
++          <aside className="lg:w-80 shrink-0">
++            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 sticky top-24">
++              <div className="flex items-center justify-between mb-4">
++                <h2 className="text-sm font-semibold text-white flex items-center gap-2">
++                  <Clock className="w-4 h-4 text-slate-400" />
++                  Your Reports
++                </h2>
++                <button
++                  onClick={handleNewUpload}
++                  className="flex items-center gap-1 text-xs font-medium text-purple-400 hover:text-purple-300 transition-colors bg-purple-600/10 hover:bg-purple-600/20 px-3 py-1.5 rounded-lg"
++                >
++                  <Plus className="w-3.5 h-3.5" />
++                  New Upload
++                </button>
+               </div>
++
++              {loadingReports ? (
++                <div className="flex items-center justify-center py-8 text-slate-500">
++                  <Loader2 className="w-5 h-5 animate-spin" />
++                </div>
++              ) : reports.length === 0 ? (
++                <div className="text-center py-8">
++                  <Upload className="w-8 h-8 text-slate-600 mx-auto mb-2" />
++                  <p className="text-sm text-slate-500">No reports yet</p>
++                  <p className="text-xs text-slate-600 mt-1">
++                    Upload a CSV to create your first report
++                  </p>
++                </div>
++              ) : (
++                <div className="space-y-2 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
++                  {reports.map((r) => (
++                    <div
++                      key={r.id}
++                      className={`group relative rounded-xl p-3 cursor-pointer transition-all ${
++                        selectedReportId === r.id
++                          ? "bg-purple-600/20 border border-purple-600/40"
++                          : "bg-slate-700/30 border border-transparent hover:bg-slate-700/50 hover:border-slate-600"
++                      }`}
++                      onClick={() => handleSelectReport(r.id)}
++                    >
++                      <div className="flex items-start justify-between gap-2">
++                        <div className="min-w-0 flex-1">
++                          <p className="text-sm font-medium text-white truncate flex items-center gap-1.5">
++                            <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
++                            {r.filename}
++                          </p>
++                          <p className="text-xs text-slate-500 mt-1">
++                            {formatDate(r.created_at)}
++                          </p>
++                        </div>
++                        <div className="flex items-center gap-1 shrink-0">
++                          {r.health_grade && (
++                            <span
++                              className={`text-xs font-bold ${gradeColor(r.health_grade)}`}
++                            >
++                              {r.health_grade}
++                            </span>
++                          )}
++                          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
++                        </div>
++                      </div>
++
++                      <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
++                        {r.total_records != null && (
++                          <span className="flex items-center gap-1">
++                            <BarChart3 className="w-3 h-3" />
++                            {r.total_records.toLocaleString()}
++                          </span>
++                        )}
++                        {r.health_score != null && (
++                          <span className="flex items-center gap-1">
++                            <Shield className="w-3 h-3" />
++                            {r.health_score.toFixed(0)}
++                          </span>
++                        )}
++                        {r.anomaly_count != null && r.anomaly_count > 0 && (
++                          <span className="flex items-center gap-1 text-amber-400">
++                            <AlertTriangle className="w-3 h-3" />
++                            {r.anomaly_count}
++                          </span>
++                        )}
++                      </div>
++
++                      {/* Delete button */}
++                      <button
++                        onClick={(e) => {
++                          e.stopPropagation();
++                          handleDeleteReport(r.id);
++                        }}
++                        disabled={deletingId === r.id}
++                        className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-red-600/20 text-slate-500 hover:text-red-400"
++                        title="Delete report"
++                      >
++                        {deletingId === r.id ? (
++                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
++                        ) : (
++                          <Trash2 className="w-3.5 h-3.5" />
++                        )}
++                      </button>
++                    </div>
++                  ))}
++                </div>
++              )}
+             </div>
+-          </div>
+-        </div>
++          </aside>
++
++          {/* Main Content */}
++          <main className="flex-1 min-w-0">
++            {/* Show upload panel when: no reports, or user clicked "New Upload" */}
++            {(showUpload || (!selectedReportId && !loadingReport)) && (
++              <>
++                {/* Welcome Banner */}
++                <div className="bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-blue-600/20 border border-blue-700/30 rounded-2xl p-6 mb-6">
++                  <div className="flex items-start gap-4">
++                    <div className="w-12 h-12 bg-blue-600/30 rounded-xl flex items-center justify-center shrink-0">
++                      <Upload className="w-6 h-6 text-blue-400" />
++                    </div>
++                    <div>
++                      <h2 className="text-xl font-bold text-white mb-1">
++                        {reports.length > 0
++                          ? "Upload New Report"
++                          : `Welcome${user?.username ? `, ${user.username}` : ""}`}
++                      </h2>
++                      <p className="text-sm text-slate-300">
++                        Upload a CSV file with your energy consumption data to get AI-powered
++                        analytics, forecasting, anomaly detection, and optimization
++                        recommendations.
++                      </p>
++                      <div className="flex items-center gap-4 mt-3 text-xs text-slate-400">
++                        <span className="flex items-center gap-1">
++                          <FileText className="w-3.5 h-3.5" />
++                          CSV format with timestamp &amp; energy columns
++                        </span>
++                        <span className="flex items-center gap-1">
++                          <Zap className="w-3.5 h-3.5" />
++                          Auto-detects column types
++                        </span>
++                      </div>
++                    </div>
++                  </div>
++                </div>
+ 
+-        {/* Upload & Analysis Panel - the main content */}
+-        <UploadAnalysisPanel />
++                <UploadAnalysisPanel onUploadComplete={handleUploadComplete} />
++              </>
++            )}
+ 
+-        {/* Footer */}
+-        <div className="mt-12 text-center text-xs text-slate-500">
+-          <p>AI Energy Intelligence Platform | Powered by LSTM, Isolation Forest &amp; Advanced Analytics</p>
++            {/* Show a saved report */}
++            {selectedReportId && !showUpload && (
++              <>
++                {loadingReport ? (
++                  <div className="flex items-center justify-center py-24">
++                    <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
++                  </div>
++                ) : selectedReportData ? (
++                  <UploadAnalysisPanel
++                    savedReport={selectedReportData}
++                    onUploadComplete={handleUploadComplete}
++                  />
++                ) : (
++                  <div className="text-center py-24 text-slate-500">
++                    <p>Failed to load report.</p>
++                  </div>
++                )}
++              </>
++            )}
++
++            {/* Footer */}
++            <div className="mt-12 text-center text-xs text-slate-500">
++              <p>
++                AI Energy Intelligence Platform | Powered by LSTM, Isolation Forest &amp;
++                Advanced Analytics
++              </p>
++            </div>
++          </main>
+         </div>
+-      </main>
++      </div>
+     </div>
+   );
+ }
+-- 
+2.34.1
+

@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = ["Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {extras = ["standard"], version = "^0.135.1"}
+psycopg = {extras = ["binary"], version = "^3.3.3"}
+torch = {version = ">=2.0,<3.0", python = ">=3.12,<3.15"}
+numpy = {version = "^2.4.2", python = ">=3.12,<3.15"}
+pandas = {version = "^3.0.1", python = ">=3.12,<3.15"}
+scikit-learn = {version = "^1.8.0", python = ">=3.12,<3.15"}
+pyjwt = {version = "^2.11.0", python = ">=3.12,<3.15"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4", python = ">=3.12,<3.15"}
+python-multipart = {version = "^0.0.22", python = ">=3.12,<3.15"}
+sqlalchemy = {version = "^2.0.48", python = ">=3.12,<3.15"}
+aiosqlite = {version = "^0.22.1", python = ">=3.12,<3.15"}
+python-dotenv = {version = "^1.2.2", python = ">=3.12,<3.15"}
+bcrypt = "^5.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
