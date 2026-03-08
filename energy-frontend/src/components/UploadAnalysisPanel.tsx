@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { analyticsAPI } from "../lib/api";
+import { formatINR } from "../lib/currency";
 import {
   LineChart,
   Line,
@@ -234,7 +235,7 @@ export default function UploadAnalysisPanel({
 
   const sections = [
     { id: "summary", label: "Summary", icon: Zap },
-    { id: "detection", label: "Detected Columns", icon: FileText },
+    { id: "detection", label: "Auto-Identified Data Fields", icon: FileText },
     { id: "forecast", label: "Forecast", icon: TrendingUp },
     { id: "anomalies", label: "Anomalies", icon: Activity },
     { id: "fixes", label: "Fix Suggestions", icon: Wrench },
@@ -248,7 +249,7 @@ export default function UploadAnalysisPanel({
     <div className="space-y-6">
       {/* Upload Card — hidden when viewing a saved report */}
       {!isViewingSaved && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-purple-600/20 rounded-xl flex items-center justify-center">
               <Upload className="w-5 h-5 text-purple-400" />
@@ -334,7 +335,7 @@ export default function UploadAnalysisPanel({
                 <button
                   key={s.id}
                   onClick={() => setActiveSection(s.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap shadow-md hover:shadow-lg ${
                     isActive
                       ? "bg-purple-600 text-white shadow-lg shadow-purple-600/20"
                       : "bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50"
@@ -383,8 +384,6 @@ export default function UploadAnalysisPanel({
 
 function DashboardSummarySection({
   summary,
-  trainingInfo,
-  alreadyTrained,
 }: {
   summary: DashboardSummary;
   trainingInfo: TrainingInfo | null;
@@ -393,7 +392,7 @@ function DashboardSummarySection({
   return (
     <div className="space-y-6">
       {/* Dashboard Stats */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+      <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Zap className="w-5 h-5 text-blue-400" />
           Dataset Summary
@@ -436,89 +435,16 @@ function DashboardSummarySection({
           </span>
         </div>
       </div>
-
-      {/* Training Status */}
-      {trainingInfo && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-purple-400" />
-            Model Training Status
-          </h3>
-
-          {alreadyTrained ? (
-            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-4 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-blue-200 font-medium">Dataset Already Used</p>
-                <p className="text-sm text-blue-300/70 mt-1">
-                  This CSV has been used for training before. The model was not retrained to avoid redundancy.
-                </p>
-              </div>
-            </div>
-          ) : trainingInfo.trained ? (
-            <div className="space-y-3">
-              <div className="bg-green-900/20 border border-green-700/30 rounded-xl p-4 flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-green-200 font-medium">Model Trained Successfully</p>
-                  <p className="text-sm text-green-300/70 mt-1">
-                    This new dataset was used to train the model for improved accuracy.
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {trainingInfo.lstm?.trained && (
-                  <div className="bg-slate-700/30 rounded-xl p-3">
-                    <p className="text-xs text-slate-400 mb-1">LSTM Forecaster</p>
-                    <p className="text-sm text-white font-medium">
-                      Val Loss: {trainingInfo.lstm.best_val_loss?.toFixed(6)}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {trainingInfo.lstm.epochs_trained} epochs |{" "}
-                      {trainingInfo.lstm.optimal ? (
-                        <span className="text-green-400">Optimal</span>
-                      ) : (
-                        <span className="text-amber-400">Training continues with more data</span>
-                      )}
-                    </p>
-                  </div>
-                )}
-                {trainingInfo.anomaly_detector?.trained && (
-                  <div className="bg-slate-700/30 rounded-xl p-3">
-                    <p className="text-xs text-slate-400 mb-1">Anomaly Detector</p>
-                    <p className="text-sm text-white font-medium">
-                      {trainingInfo.anomaly_detector.anomalies_found} anomalies found
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      in {trainingInfo.anomaly_detector.total_records} records
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="bg-amber-900/20 border border-amber-700/30 rounded-xl p-4 flex items-start gap-3">
-              <Shield className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-amber-200 font-medium">Training Skipped</p>
-                <p className="text-sm text-amber-300/70 mt-1">
-                  {trainingInfo.reason || "Model has reached optimal accuracy. No further training needed."}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
 
 function DetectionInfo({ info }: { info: DetectedColumns }) {
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <FileText className="w-5 h-5 text-purple-400" />
-        Smart Column Detection Results
+        Auto-Identified Data Fields
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <InfoCard label="Datetime Column" value={info.datetime_column} />
@@ -567,7 +493,7 @@ function ForecastSection({
   ];
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <TrendingUp className="w-5 h-5 text-blue-400" />
         24h Forecast (Based on Your Data)
@@ -619,7 +545,7 @@ function AnomaliesSection({
   const sampledData = chartData.filter((_, i) => i % step === 0);
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <Activity className="w-5 h-5 text-red-400" />
         Anomaly Detection Results
@@ -704,7 +630,7 @@ function FixSuggestionsSection({ data }: { data: FixSuggestions }) {
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <Wrench className="w-5 h-5 text-amber-400" />
         Anomaly Fix Suggestions
@@ -778,9 +704,9 @@ function FixSuggestionsSection({ data }: { data: FixSuggestions }) {
           </h4>
           <div className="space-y-2">
             {data.fix_suggestions.map((fix, i) => (
-              <div key={i} className="flex items-start gap-3 bg-emerald-900/10 border border-emerald-900/30 rounded-xl p-3">
-                <span className="text-emerald-400 text-sm font-bold shrink-0">{i + 1}.</span>
-                <p className="text-sm text-emerald-200">{fix}</p>
+              <div key={i} className="flex items-start gap-3 bg-yellow-900/10 border border-yellow-900/30 rounded-xl p-3">
+                <span className="text-yellow-400 text-sm font-bold shrink-0">{i + 1}.</span>
+                <p className="text-sm text-yellow-300">{fix}</p>
               </div>
             ))}
           </div>
@@ -820,15 +746,15 @@ function OptimizationSection({
   ];
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <BarChart3 className="w-5 h-5 text-green-400" />
         Load Optimization Analysis
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatMini label="Original Cost" value={`$${data.original_cost.toFixed(2)}`} />
-        <StatMini label="Optimized Cost" value={`$${data.optimized_cost.toFixed(2)}`} color="green" />
-        <StatMini label="Savings" value={`$${data.estimated_savings.toFixed(2)} (${savingsPercent}%)`} color="green" />
+        <StatMini label="Original Cost" value={formatINR(data.original_cost)} />
+        <StatMini label="Optimized Cost" value={formatINR(data.optimized_cost)} color="green" />
+        <StatMini label="Savings" value={`${formatINR(data.estimated_savings)} (${savingsPercent}%)`} color="green" />
         <StatMini label="Peak Reduction" value={`${data.peak_reduction_percent.toFixed(1)}%`} />
       </div>
       <div className="h-48">
@@ -865,7 +791,7 @@ function HealthScoreSection({
 }) {
   if (!data || !data.energy_health_score) {
     return (
-      <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+      <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
         <p className="text-slate-400 text-center py-8">Health score data not available</p>
       </div>
     );
@@ -878,7 +804,7 @@ function HealthScoreSection({
     score >= 80 ? "bg-green-900/20 border-green-800" : score >= 60 ? "bg-yellow-900/20 border-yellow-800" : "bg-red-900/20 border-red-800";
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <Shield className="w-5 h-5 text-emerald-400" />
         Energy Health Score

@@ -94,7 +94,7 @@ export default function AnomalyAlerts() {
   }
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -130,7 +130,7 @@ export default function AnomalyAlerts() {
           {/* Summary */}
           {data && (
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-slate-700/30 rounded-xl p-3">
+              <div className="bg-slate-700/30 rounded-xl p-3 hover:bg-slate-700/40 transition-colors">
                 <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
                   <AlertTriangle className="w-3 h-3" />
                   Anomalies
@@ -142,7 +142,7 @@ export default function AnomalyAlerts() {
                   </span>
                 </p>
               </div>
-              <div className="bg-slate-700/30 rounded-xl p-3">
+              <div className="bg-slate-700/30 rounded-xl p-3 hover:bg-slate-700/40 transition-colors">
                 <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
                   <Activity className="w-3 h-3" />
                   Rate
@@ -151,7 +151,7 @@ export default function AnomalyAlerts() {
                   {data.summary.anomaly_rate}%
                 </p>
               </div>
-              <div className="bg-slate-700/30 rounded-xl p-3">
+              <div className="bg-slate-700/30 rounded-xl p-3 hover:bg-slate-700/40 transition-colors">
                 <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
                   <Shield className="w-3 h-3" />
                   Max Severity

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
 import { authAPI } from "../lib/api";
-import { Zap, Mail, Lock, User, UserPlus } from "lucide-react";
+import { Zap, Mail, Lock, User, UserPlus, Home } from "lucide-react";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -34,6 +34,13 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
+      <Link
+        to="/"
+        className="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-slate-800/50"
+      >
+        <Home className="w-4 h-4" />
+        <span className="text-sm">Home</span>
+      </Link>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">

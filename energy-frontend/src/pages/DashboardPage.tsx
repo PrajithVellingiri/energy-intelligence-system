@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
 import { analyticsAPI } from "../lib/api";
 import UploadAnalysisPanel from "../components/UploadAnalysisPanel";
+import AIMetricsPanel from "../components/AIMetricsPanel";
 import {
   Zap,
   LogOut,
@@ -17,6 +17,7 @@ import {
   Shield,
   AlertTriangle,
   Loader2,
+  Home,
 } from "lucide-react";
 
 interface ReportSummary {
@@ -146,6 +147,13 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate("/")}
+                className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-800"
+              >
+                <Home className="w-4 h-4" />
+                Home
+              </button>
               <div className="flex items-center gap-2 text-sm text-slate-300">
                 <User className="w-4 h-4" />
                 <span>{user?.username}</span>
@@ -166,7 +174,7 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar: Report History */}
           <aside className="lg:w-80 shrink-0">
-            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 sticky top-24">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 sticky top-24 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-white flex items-center gap-2">
                   <Clock className="w-4 h-4 text-slate-400" />
@@ -198,7 +206,7 @@ export default function DashboardPage() {
                   {reports.map((r) => (
                     <div
                       key={r.id}
-                      className={`group relative rounded-xl p-3 cursor-pointer transition-all ${
+                      className={`group relative rounded-xl p-3 cursor-pointer transition-all shadow-md hover:shadow-lg ${
                         selectedReportId === r.id
                           ? "bg-purple-600/20 border border-purple-600/40"
                           : "bg-slate-700/30 border border-transparent hover:bg-slate-700/50 hover:border-slate-600"
@@ -331,8 +339,11 @@ export default function DashboardPage() {
               </>
             )}
 
+            {/* AI Metrics Panel */}
+            <AIMetricsPanel />
+
             {/* Footer */}
-            <div className="mt-12 text-center text-xs text-slate-500">
+            <div className="mt-8 text-center text-xs text-slate-500">
               <p>
                 AI Energy Intelligence Platform | Powered by LSTM, Isolation Forest &amp;
                 Advanced Analytics

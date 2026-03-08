@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { analyticsAPI } from "../lib/api";
+import { formatINR } from "../lib/currency";
 import {
   BarChart,
   Bar,
@@ -62,11 +63,7 @@ export default function OptimizationPanel() {
     : [];
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(value);
+    return formatINR(value);
   };
 
   const formatHour = (h: number) => {
@@ -88,7 +85,7 @@ export default function OptimizationPanel() {
   }
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-green-600/20 rounded-xl flex items-center justify-center">
