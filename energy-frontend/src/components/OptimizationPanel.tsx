@@ -1,5 +1,3 @@
-import { useState, useEffect } from "react";
-import { analyticsAPI } from "../lib/api";
 import { formatINR } from "../lib/currency";
 import {
   BarChart,
@@ -9,171 +7,217 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Cell,
   Legend,
 } from "recharts";
-import { DollarSign, TrendingDown, Clock, Lightbulb } from "lucide-react";
+import { DollarSign, TrendingDown, Clock, Zap } from "lucide-react";
 
-interface OptimizationData {
+export interface OptimizationData {
   original_cost: number;
   optimized_cost: number;
   estimated_savings: number;
-  savings_percentage: number;
   peak_reduction_percent: number;
-  total_consumption_kwh: number;
-  peak_consumption_kwh: number;
-  off_peak_consumption_kwh: number;
-  recommended_shift_hours: number[];
-  peak_tariff: number;
-  off_peak_tariff: number;
-  hourly_original: Record<string, number>;
-  hourly_optimized: Record<string, number>;
+  recommended_shift_hours?: number[];
+  savings_percentage?: number;
+  hourly_original?: Record<string, number>;
+  hourly_optimized?: Record<string, number>;
 }
 
-export default function OptimizationPanel() {
-  const [data, setData] = useState<OptimizationData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+interface OptimizationPanelProps {
+  data?: OptimizationData | null;
+}
 
-  useEffect(() => {
-    fetchOptimization();
-  }, []);
-
-  const fetchOptimization = async () => {
-    setLoading(true);
-    try {
-      const res = await analyticsAPI.getOptimization();
-      setData(res.data);
-      setError("");
-    } catch (err: any) {
-      setError("Failed to load optimization data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Prepare bar chart data
-  const chartData = data
-    ? Object.keys(data.hourly_original)
-        .sort((a, b) => parseInt(a) - parseInt(b))
-        .map((hour) => ({
-          hour: `${hour}:00`,
-          original: data.hourly_original[hour],
-          optimized: data.hourly_optimized[hour],
-        }))
-    : [];
-
-  const formatCurrency = (value: number) => {
-    return formatINR(value);
-  };
-
-  const formatHour = (h: number) => {
-    if (h === 0) return "12 AM";
-    if (h < 12) return `${h} AM`;
-    if (h === 12) return "12 PM";
-    return `${h - 12} PM`;
-  };
-
-  if (loading) {
+export default function OptimizationPanel({ data }: OptimizationPanelProps) {
+  if (!data) {
     return (
-      <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-slate-700 rounded w-48" />
-          <div className="h-64 bg-slate-700/50 rounded" />
-        </div>
+      <div className="glass-panel rounded-2xl p-8 text-center">
+        <DollarSign className="w-8 h-8 text-emerald-400 mx-auto mb-2 opacity-50" />
+        <p className="text-slate-400 text-sm">No load optimization analysis available.</p>
       </div>
     );
   }
 
+  const savingsPct =
+    data.savings_percentage ??
+    (data.original_cost > 0
+      ? (data.estimated_savings / data.original_cost) * 100
+      : 0);
+
+  // If hourly curves exist, show hourly breakdown; otherwise show high-level comparison
+  const hasHourly = data.hourly_original && Object.keys(data.hourly_original).length > 0;
+
+  const comparisonData = hasHourly
+    ? Object.keys(data.hourly_original!)
+        .sort((a, b) => parseInt(a) - parseInt(b))
+        .map((hour) => ({
+          hour: `${hour}:00`,
+          original: data.hourly_original![hour],
+          optimized: data.hourly_optimized?.[hour] ?? 0,
+        }))
+    : [
+        { name: "Current Spend", value: data.original_cost, color: "#f43f5e" },
+        { name: "AI Optimized Spend", value: data.optimized_cost, color: "#10b981" },
+      ];
+
+  const shiftHours = data.recommended_shift_hours || [1, 2, 3, 4, 23];
+
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+    <div className="glass-panel-elevated rounded-2xl p-6 relative overflow-hidden">
+      {/* Ambient background accent */}
+      <div className="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-green-600/20 rounded-xl flex items-center justify-center">
-          <DollarSign className="w-5 h-5 text-green-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl flex items-center justify-center shadow-glow-emerald">
+            <DollarSign className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+              Tariff &amp; Load Shifting Optimization
+              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                Cost Minimization
+              </span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Simulates dynamic peak-to-off-peak tariff arbitrage and peak power shaving
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg font-semibold text-white">Cost Optimization</h3>
-          <p className="text-sm text-slate-400">Load Shifting Strategy</p>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-lg">
+            <TrendingDown className="w-4 h-4 text-emerald-400" />
+            <span className="font-semibold">Save up to {savingsPct.toFixed(1)}%</span>
+          </div>
         </div>
       </div>
 
-      {error ? (
-        <div className="text-red-400 text-center py-8">{error}</div>
-      ) : data ? (
-        <>
-          {/* Key Metrics */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-slate-700/30 rounded-xl p-4">
-              <p className="text-xs text-slate-400 mb-1">Original Cost</p>
-              <p className="text-xl font-bold text-white">{formatCurrency(data.original_cost)}</p>
-            </div>
-            <div className="bg-slate-700/30 rounded-xl p-4">
-              <p className="text-xs text-slate-400 mb-1">Optimized Cost</p>
-              <p className="text-xl font-bold text-green-400">{formatCurrency(data.optimized_cost)}</p>
-            </div>
-            <div className="bg-green-900/30 border border-green-700/30 rounded-xl p-4">
-              <p className="text-xs text-green-300 mb-1">Estimated Savings</p>
-              <p className="text-xl font-bold text-green-400">{formatCurrency(data.estimated_savings)}</p>
-              <p className="text-xs text-green-300/70">{data.savings_percentage}% reduction</p>
-            </div>
-            <div className="bg-slate-700/30 rounded-xl p-4">
-              <p className="text-xs text-slate-400 mb-1">Peak Reduction</p>
-              <p className="text-xl font-bold text-amber-400">{data.peak_reduction_percent}%</p>
-            </div>
-          </div>
+      {/* Metrics Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-6">
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5">
+          <p className="text-xs text-slate-400 mb-1 font-medium">Standard Tariff Cost</p>
+          <p className="text-2xl font-black text-rose-400 tracking-tight">
+            {formatINR(data.original_cost)}
+          </p>
+        </div>
 
-          {/* Hourly Comparison Chart */}
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-slate-300 mb-3">Hourly Load Comparison</h4>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="hour" stroke="#94a3b8" tick={{ fontSize: 10 }} interval={2} />
-                  <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#1e293b",
-                      border: "1px solid #475569",
-                      borderRadius: "8px",
-                      color: "#fff",
-                    }}
-                    formatter={(value: number) => [`${value.toFixed(1)} kWh`]}
-                  />
-                  <Legend />
-                  <Bar dataKey="original" fill="#ef4444" name="Original" radius={[2, 2, 0, 0]} opacity={0.7} />
-                  <Bar dataKey="optimized" fill="#22c55e" name="Optimized" radius={[2, 2, 0, 0]} opacity={0.7} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5">
+          <p className="text-xs text-slate-400 mb-1 font-medium">Optimized Cost</p>
+          <p className="text-2xl font-black text-emerald-400 tracking-tight">
+            {formatINR(data.optimized_cost)}
+          </p>
+        </div>
 
-          {/* Recommendations */}
-          <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Lightbulb className="w-4 h-4 text-blue-400" />
-              <h4 className="text-sm font-medium text-blue-300">Recommendations</h4>
-            </div>
-            <ul className="space-y-2 text-sm text-slate-300">
-              <li className="flex items-start gap-2">
-                <Clock className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                <span>
-                  Shift {data.peak_reduction_percent}% of peak load to off-peak hours:{" "}
-                  <span className="text-blue-300 font-medium">
-                    {data.recommended_shift_hours.map(formatHour).join(", ")}
-                  </span>
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <TrendingDown className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                <span>
-                  Peak tariff: ${data.peak_tariff}/kWh | Off-peak tariff: ${data.off_peak_tariff}/kWh
-                </span>
-              </li>
-            </ul>
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5">
+          <p className="text-xs text-slate-400 mb-1 font-medium">Projected Cost Savings</p>
+          <p className="text-2xl font-black text-cyan-300 tracking-tight">
+            {formatINR(data.estimated_savings)}
+            <span className="text-xs font-normal text-emerald-400 ml-1.5">
+              (-{savingsPct.toFixed(1)}%)
+            </span>
+          </p>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5">
+          <p className="text-xs text-slate-400 mb-1 font-medium">Peak Demand Shaving</p>
+          <p className="text-2xl font-black text-amber-300 tracking-tight">
+            {data.peak_reduction_percent.toFixed(1)}%
+          </p>
+        </div>
+      </div>
+
+      {/* Comparison Visualizer */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between text-xs text-slate-400 mb-2 px-1">
+          <span className="font-medium">
+            {hasHourly ? "Hourly Load Shifting Profile (Original vs AI Adjusted)" : "Spend Comparison Breakdown"}
+          </span>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Current
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Optimized
+            </span>
           </div>
-        </>
-      ) : null}
+        </div>
+
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            {hasHourly ? (
+              <BarChart data={comparisonData as any[]} margin={{ top: 10, right: 15, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis dataKey="hour" stroke="#64748b" tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                <YAxis stroke="#64748b" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(15, 23, 42, 0.95)",
+                    border: "1px solid rgba(148, 163, 184, 0.2)",
+                    borderRadius: "12px",
+                    color: "#f8fafc",
+                    fontSize: "12px",
+                  }}
+                  formatter={(val: number) => [`${val.toFixed(2)} kWh`, "Load"]}
+                />
+                <Legend verticalAlign="top" height={30} />
+                <Bar dataKey="original" name="Original Demand" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="optimized" name="Optimized Demand" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            ) : (
+              <BarChart data={comparisonData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 12, fill: "#94a3b8" }} />
+                <YAxis
+                  stroke="#64748b"
+                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tickFormatter={(val) => `₹${val}`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(15, 23, 42, 0.95)",
+                    border: "1px solid rgba(148, 163, 184, 0.2)",
+                    borderRadius: "12px",
+                    color: "#f8fafc",
+                    fontSize: "12px",
+                  }}
+                  formatter={(val: number) => [formatINR(val), "Cost"]}
+                />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={56}>
+                  {comparisonData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Recommendations & Off-Peak Shift Windows */}
+      <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Clock className="w-4 h-4 text-cyan-400" />
+          <h4 className="text-xs font-semibold text-white uppercase tracking-wider">
+            Optimal Off-Peak Load Shifting Windows
+          </h4>
+        </div>
+        <p className="text-xs text-slate-400 mb-3">
+          Shifting flexible industrial or HVAC machinery to these target off-peak hours captures maximum tariff discounts:
+        </p>
+
+        <div className="flex flex-wrap gap-2">
+          {shiftHours.map((hour) => (
+            <span
+              key={hour}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30"
+            >
+              <Zap className="w-3 h-3 text-cyan-400" />
+              {String(hour).padStart(2, "0")}:00 - {String((hour + 1) % 24).padStart(2, "0")}:00
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

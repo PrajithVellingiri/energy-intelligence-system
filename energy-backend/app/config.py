@@ -15,6 +15,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./energy_platform.db")
 
+# Server & CORS Configuration
+PORT = int(os.getenv("PORT", "8000"))
+HOST = os.getenv("HOST", "0.0.0.0")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
+
 # AI Model Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AI_DIR = os.path.join(os.path.dirname(BASE_DIR), "AI")

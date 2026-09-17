@@ -1,42 +1,38 @@
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.log
-*.sqlite3
+*.pyc
 
+# Virtual environments
 venv/
 env/
 .venv/
 
-poetry.lock
-
-.cache/
-
+# Environment files
 .env
+.env.*
+!.env.example
 
-*.pkl
-*.joblib
-*.h5
-*.pt
-*.pth
+# Database & logs
+*.log
+logs/
+*.tmp
+*.temp
 
+# Dependencies & Build
 node_modules/
-
 dist/
 build/
+.cache/
 
+# System / Editor
 .DS_Store
 Thumbs.db
-
 .vscode/
 .idea/
 
-logs/
-*.log
-
-datasets/
-data/
-
-*.tmp
-*.temp
+# Preserve model checkpoints
+!AI/checkpoints/*.pth
+!AI/checkpoints/*.pkl

@@ -1,4 +1,4 @@
-import path from "path"
+﻿import path from "path"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
@@ -9,5 +9,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-charts": ["recharts"],
+          "vendor-icons": ["lucide-react"],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
 })
-
