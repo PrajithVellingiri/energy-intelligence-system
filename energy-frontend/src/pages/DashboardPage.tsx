@@ -49,6 +49,25 @@ export default function DashboardPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentDateTime, setCurrentDateTime] = useState("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentDateTime(
+        now.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      );
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchReports = useCallback(async () => {
     try {
@@ -141,14 +160,14 @@ export default function DashboardPage() {
     const isC = grade === "C";
     return (
       <span
-        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+        className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
           isA
-            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+            ? "bg-forest-50 text-forest border-forest-200"
             : isB
-            ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+            ? "bg-sage-50 text-sage-800 border-sage-200"
             : isC
-            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-            : "bg-rose-500/10 text-rose-400 border-rose-500/30"
+            ? "bg-solar-50 text-solar-800 border-solar-200"
+            : "bg-[#FDF2F2] text-[#9C2B2B] border-[#F5C6CB]"
         }`}
       >
         Grade {grade}
@@ -158,130 +177,215 @@ export default function DashboardPage() {
 
   // Sidebar report list component (used for both desktop and mobile drawer)
   const renderReportsList = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-cyan-400" />
-          Telemetry Vault ({reports.length})
-        </h2>
-        <button
-          onClick={handleNewUpload}
-          className="flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-cyan-200 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 px-3 py-1.5 rounded-xl transition-all"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>New Upload</span>
-        </button>
-      </div>
+    <div className="space-y-6">
+      {/* Overview Section */}
+      <div>
+        <span className="text-[10px] font-bold text-editorial-muted uppercase tracking-widest block mb-2.5 px-3">
+          Overview
+        </span>
+        <div className="space-y-1">
+          <button
+            onClick={() => {
+              if (reports.length > 0 && !selectedReportId) {
+                handleSelectReport(reports[0].id);
+              } else {
+                setShowUpload(false);
+              }
+            }}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+              !showUpload && selectedReportId
+                ? "bg-forest-50 text-forest font-bold"
+                : "text-editorial-text hover:bg-ivory-100"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-forest" />
+              <span>Active Telemetry</span>
+            </span>
+            {!showUpload && selectedReportId && (
+              <span className="w-1.5 h-1.5 rounded-full bg-solar" />
+            )}
+          </button>
 
-      {loadingReports ? (
-        <div className="flex items-center justify-center py-12 text-slate-500">
-          <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
-        </div>
-      ) : reports.length === 0 ? (
-        <div className="text-center py-10 px-3 bg-slate-900/40 rounded-xl border border-slate-800">
-          <Upload className="w-8 h-8 text-slate-600 mx-auto mb-2 opacity-60" />
-          <p className="text-xs font-semibold text-slate-400">No reports generated yet</p>
-          <p className="text-[11px] text-slate-500 mt-1">
-            Ingest a CSV dataset to initiate AI predictions
-          </p>
           <button
             onClick={handleNewUpload}
-            className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-cyan-400 hover:underline"
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+              showUpload || (!selectedReportId && !loadingReport)
+                ? "bg-forest-50 text-forest font-bold"
+                : "text-editorial-text hover:bg-ivory-100"
+            }`}
           >
-            Upload Now &rarr;
+            <span className="flex items-center gap-2">
+              <Plus className="w-3.5 h-3.5 text-solar" />
+              <span>Ingest Dataset</span>
+            </span>
+            {(showUpload || (!selectedReportId && !loadingReport)) && (
+              <span className="w-1.5 h-1.5 rounded-full bg-solar" />
+            )}
           </button>
         </div>
-      ) : (
-        <div className="space-y-2.5 max-h-[calc(100vh-16rem)] overflow-y-auto pr-1">
-          {reports.map((r) => {
-            const isSelected = selectedReportId === r.id;
-            return (
-              <div
-                key={r.id}
-                onClick={() => handleSelectReport(r.id)}
-                className={`group relative rounded-xl p-3.5 cursor-pointer transition-all ${
-                  isSelected
-                    ? "bg-cyan-500/10 border border-cyan-500/50 shadow-glow-cyan"
-                    : "bg-slate-900/60 border border-slate-800/80 hover:bg-slate-800/60 hover:border-slate-700"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-white truncate flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span className="truncate">{r.filename}</span>
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-1 font-mono">
-                      {formatDate(r.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {gradeBadge(r.health_grade)}
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 ${
-                        isSelected ? "text-cyan-400" : "text-slate-600"
-                      }`}
-                    />
-                  </div>
-                </div>
+      </div>
 
-                <div className="flex items-center gap-3 mt-2.5 text-[11px] text-slate-400 font-mono">
-                  {r.total_records != null && (
-                    <span className="flex items-center gap-1">
-                      <BarChart3 className="w-3 h-3 text-slate-500" />
-                      {r.total_records.toLocaleString()}
-                    </span>
-                  )}
-                  {r.health_score != null && (
-                    <span className="flex items-center gap-1">
-                      <Shield className="w-3 h-3 text-emerald-400" />
-                      {r.health_score.toFixed(0)}/100
-                    </span>
-                  )}
-                  {r.anomaly_count != null && r.anomaly_count > 0 && (
-                    <span className="flex items-center gap-1 text-amber-400 font-semibold">
-                      <AlertTriangle className="w-3 h-3" />
-                      {r.anomaly_count}
-                    </span>
-                  )}
-                </div>
+      <div className="border-t border-editorial-divider" />
 
-                {/* Delete button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteReport(r.id);
-                  }}
-                  disabled={deletingId === r.id}
-                  className="absolute top-2.5 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-rose-500/20 text-slate-500 hover:text-rose-400"
-                  title="Delete report"
-                >
-                  {deletingId === r.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </div>
-            );
-          })}
+      {/* Telemetry Vault Reports Section */}
+      <div>
+        <div className="flex items-center justify-between mb-2.5 px-3">
+          <span className="text-[10px] font-bold text-editorial-muted uppercase tracking-widest flex items-center gap-1.5">
+            <Clock className="w-3 h-3 text-forest" />
+            Telemetry Vault ({reports.length})
+          </span>
+          <button
+            onClick={handleNewUpload}
+            className="text-[11px] font-bold text-forest hover:text-forest-600 flex items-center gap-1"
+            title="Upload new CSV"
+          >
+            <Plus className="w-3 h-3" />
+            <span>New</span>
+          </button>
         </div>
-      )}
+
+        {loadingReports ? (
+          <div className="flex items-center justify-center py-8 text-editorial-muted">
+            <Loader2 className="w-4 h-4 animate-spin text-forest" />
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="text-center py-8 px-3 bg-ivory-100 rounded-xl border border-editorial-border">
+            <Upload className="w-6 h-6 text-editorial-muted mx-auto mb-2 opacity-50" />
+            <p className="text-xs font-semibold text-editorial-text">No Telemetry Stored</p>
+            <p className="text-[11px] text-editorial-muted mt-0.5">
+              Upload a CSV dataset to initiate analysis
+            </p>
+            <button
+              onClick={handleNewUpload}
+              className="mt-2.5 inline-flex items-center gap-1 text-xs font-bold text-forest hover:underline"
+            >
+              Import Data &rarr;
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-[calc(100vh-25rem)] overflow-y-auto pr-1">
+            {reports.map((r) => {
+              const isSelected = selectedReportId === r.id;
+              return (
+                <div
+                  key={r.id}
+                  onClick={() => handleSelectReport(r.id)}
+                  className={`group relative rounded-xl p-3 cursor-pointer transition-all border ${
+                    isSelected
+                      ? "bg-forest-50 border-forest-300 text-forest shadow-editorial-sm"
+                      : "bg-white border-editorial-border hover:border-editorial-muted hover:bg-ivory-50"
+                  }`}
+                >
+                  {/* Left Amber Indicator on active selection */}
+                  {isSelected && (
+                    <span className="absolute left-0 top-2 bottom-2 w-1 bg-solar rounded-r" />
+                  )}
+
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 pl-1">
+                      <p className="text-xs font-bold truncate flex items-center gap-1.5 text-editorial-text">
+                        <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? "text-forest" : "text-editorial-muted"}`} />
+                        <span className="truncate">{r.filename}</span>
+                      </p>
+                      <p className="text-[10px] text-editorial-muted mt-0.5 font-mono">
+                        {formatDate(r.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {gradeBadge(r.health_grade)}
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 ${
+                          isSelected ? "text-forest" : "text-editorial-muted/40"
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-2 pl-1 text-[10px] font-mono text-editorial-muted">
+                    {r.total_records != null && (
+                      <span className="flex items-center gap-1">
+                        <BarChart3 className="w-3 h-3 text-editorial-muted" />
+                        {r.total_records.toLocaleString()}
+                      </span>
+                    )}
+                    {r.health_score != null && (
+                      <span className="flex items-center gap-1 text-forest font-semibold">
+                        <Shield className="w-3 h-3" />
+                        {r.health_score.toFixed(0)}/100
+                      </span>
+                    )}
+                    {r.anomaly_count != null && r.anomaly_count > 0 && (
+                      <span className="flex items-center gap-1 text-solar-800 font-bold">
+                        <AlertTriangle className="w-3 h-3 text-solar" />
+                        {r.anomaly_count}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteReport(r.id);
+                    }}
+                    disabled={deletingId === r.id}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[#FDF2F2] text-editorial-muted hover:text-[#D9534F]"
+                    title="Delete report"
+                  >
+                    {deletingId === r.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-editorial-divider" />
+
+      {/* System Status Section */}
+      <div>
+        <span className="text-[10px] font-bold text-editorial-muted uppercase tracking-widest block mb-2 px-3">
+          Engine Architecture
+        </span>
+        <div className="space-y-1 text-xs text-editorial-muted px-3">
+          <div className="flex items-center justify-between py-1 border-b border-editorial-divider">
+            <span>Neural Forecaster</span>
+            <span className="font-mono font-bold text-forest">PyTorch LSTM</span>
+          </div>
+          <div className="flex items-center justify-between py-1 border-b border-editorial-divider">
+            <span>Surveillance Model</span>
+            <span className="font-mono font-bold text-forest">Isolation Forest</span>
+          </div>
+          <div className="flex items-center justify-between py-1">
+            <span>Inference Status</span>
+            <span className="font-mono font-bold text-sage-800 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-sage" />
+              Live Engine
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#07090e] bg-grid-pattern text-slate-100 selection:bg-cyan-500/30">
-      {/* Top Console Navigation */}
-      <nav className="border-b border-slate-800/80 bg-[#07090e]/80 backdrop-blur-xl sticky top-0 z-50">
+    <div className="min-h-screen bg-ivory text-editorial-text selection:bg-forest-100">
+      {/* Top Editorial Console Navigation */}
+      <header className="border-b border-editorial-border bg-white sticky top-0 z-50 shadow-editorial-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-18">
             <div className="flex items-center gap-3">
               {/* Mobile Drawer Trigger */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-xl glass-panel text-slate-400 hover:text-white"
-                aria-label="Toggle Reports Drawer"
+                className="lg:hidden p-2 rounded-lg border border-editorial-border text-editorial-muted hover:text-editorial-text bg-ivory-100"
+                aria-label="Toggle Navigation Drawer"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -290,64 +394,74 @@ export default function DashboardPage() {
                 onClick={() => navigate("/")}
                 className="flex items-center gap-3 cursor-pointer group"
               >
-                <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-glow-cyan group-hover:scale-105 transition-transform">
-                  <Zap className="w-5 h-5 text-white" />
+                {/* Solar Identity Glyphs */}
+                <div className="w-9 h-9 bg-forest rounded-xl flex items-center justify-center text-white shadow-editorial-sm group-hover:scale-105 transition-transform">
+                  <Zap className="w-5 h-5 text-solar" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h1 className="text-base font-black tracking-tight text-white">
-                      Energy Intelligence
+                    <h1 className="text-base font-bold tracking-tight text-forest">
+                      ENERGY INTELLIGENCE
                     </h1>
-                    <span className="hidden sm:inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="hidden sm:inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-forest-50 text-forest border border-forest-100">
+                      <span className="w-1.5 h-1.5 rounded-full bg-forest" />
                       Core Live
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 -mt-0.5">Control Center &amp; Ingestion</p>
+                  <p className="text-[11px] text-editorial-muted -mt-0.5">
+                    Clean Energy &amp; Climate Intelligence Platform
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-3 sm:gap-4">
+              {currentDateTime && (
+                <div className="hidden md:flex items-center gap-1.5 text-xs font-mono text-editorial-muted bg-ivory-100 border border-editorial-border px-3 py-1.5 rounded-lg">
+                  <Clock className="w-3.5 h-3.5 text-forest" />
+                  <span>{currentDateTime}</span>
+                </div>
+              )}
+
               <button
                 onClick={() => navigate("/")}
-                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-xl glass-panel transition-colors"
+                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-editorial-muted hover:text-forest px-3 py-1.5 rounded-lg border border-editorial-border bg-white hover:bg-ivory-100 transition-colors"
               >
                 <Home className="w-3.5 h-3.5" />
-                <span>Home</span>
+                <span>Publication Home</span>
               </button>
 
-              <div className="flex items-center gap-2 text-xs text-slate-300 bg-surface-elevated border border-slate-700/80 px-3 py-1.5 rounded-xl">
-                <div className="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center text-[11px]">
-                  {user?.username?.charAt(0).toUpperCase() || "U"}
+              <div className="flex items-center gap-2 text-xs text-editorial-text bg-ivory-100 border border-editorial-border px-3 py-1.5 rounded-lg">
+                <div className="w-6 h-6 rounded-md bg-forest text-white font-bold flex items-center justify-center text-[11px]">
+                  {user?.username?.charAt(0).toUpperCase() || "O"}
                 </div>
-                <span className="font-semibold">{user?.username}</span>
+                <span className="font-bold hidden sm:inline">{user?.username || "Operator"}</span>
               </div>
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-rose-400 transition-colors px-3 py-1.5 rounded-xl glass-panel hover:border-rose-500/30"
+                className="flex items-center gap-1.5 text-xs font-semibold text-editorial-muted hover:text-[#D9534F] transition-colors px-3 py-1.5 rounded-lg border border-editorial-border bg-white hover:bg-[#FDF2F2]"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Logout</span>
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             </div>
           </div>
         </div>
-      </nav>
+      </header>
 
       {/* Mobile Drawer Slide-over Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden flex">
+        <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 bg-editorial-text/40 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="relative w-80 max-w-[85vw] bg-[#0c101a] border-r border-slate-800 p-5 h-full z-50 flex flex-col justify-between overflow-y-auto shadow-2xl">
+          <div className="relative w-80 max-w-[85vw] bg-white border-r border-editorial-border p-5 h-full z-50 flex flex-col justify-between overflow-y-auto shadow-editorial-lg">
             {renderReportsList()}
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="mt-6 w-full py-2.5 text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 rounded-xl"
+              className="mt-6 w-full py-2.5 text-xs font-bold text-forest bg-forest-50 border border-forest-100 rounded-xl"
             >
               Close Drawer
             </button>
@@ -357,38 +471,28 @@ export default function DashboardPage() {
 
       {/* Main Workspace Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Desktop Sidebar: Telemetry Vault */}
-          <aside className="hidden lg:block lg:w-80 shrink-0">
-            <div className="glass-panel-elevated rounded-2xl p-5 sticky top-24 border border-slate-800/90 shadow-xl">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Desktop Sidebar: Minimalist Telemetry Vault */}
+          <aside className="hidden lg:block lg:w-72 shrink-0">
+            <div className="editorial-card-elevated p-5 sticky top-24">
               {renderReportsList()}
             </div>
           </aside>
 
           {/* Main Content Area */}
           <main className="flex-1 min-w-0">
-            {/* Context Banner */}
-            {(showUpload || (!selectedReportId && !loadingReport)) && (
-              <div className="glass-panel-elevated rounded-2xl p-6 mb-6 border border-slate-800 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-80 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 rounded-xl flex items-center justify-center shrink-0 shadow-glow-cyan">
-                    <Upload className="w-6 h-6 text-cyan-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white tracking-tight">
-                      {reports.length > 0
-                        ? "Ingest New Telemetry Stream"
-                        : `Welcome to the Console, ${user?.username || "Operator"}`}
-                    </h2>
-                    <p className="text-xs text-slate-300 mt-1 leading-relaxed max-w-2xl font-normal">
-                      Feed real-time or historical energy readings (any frequency from 5-minute smart meters to hourly facility SCADA).
-                      Our neural pipelines will automatically validate, forecast demand, uncover anomaly footprints, and evaluate cost-reduction opportunities.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Editorial Dashboard Header */}
+            <div className="mb-6 pb-5 border-b border-editorial-divider">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-forest bg-forest-50 px-2 py-0.5 rounded border border-forest-100 mb-2 inline-block">
+                Energy Intelligence • Facility Telemetry
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-editorial-text">
+                Operational Overview
+              </h2>
+              <p className="text-xs sm:text-sm text-editorial-muted mt-1 max-w-3xl leading-relaxed">
+                Continuous facility monitoring, 24-hour forward demand forecasting, unsupervised anomaly detection, and dynamic time-of-use cost arbitrage.
+              </p>
+            </div>
 
             {/* Ingestion Dropzone & Realtime Analysis */}
             {(showUpload || (!selectedReportId && !loadingReport)) && (
@@ -399,25 +503,27 @@ export default function DashboardPage() {
             {selectedReportId && !showUpload && (
               <>
                 {loadingReport ? (
-                  <div className="glass-panel-elevated rounded-2xl p-16 flex flex-col items-center justify-center text-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-cyan-400 mb-4" />
-                    <p className="text-sm font-bold text-white">Loading Historical Telemetry Report...</p>
-                    <p className="text-xs text-slate-400 mt-1 font-mono">
+                  <div className="editorial-card p-16 flex flex-col items-center justify-center text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-forest mb-3" />
+                    <p className="text-sm font-bold text-editorial-text">
+                      Loading Historical Telemetry Report...
+                    </p>
+                    <p className="text-xs text-editorial-muted mt-1 font-mono">
                       Querying SQLite analysis vault ID #{selectedReportId}
                     </p>
                   </div>
                 ) : selectedReportData ? (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-400 font-mono">
+                    <div className="flex items-center justify-between bg-white border border-editorial-border rounded-xl px-4 py-3 text-xs text-editorial-muted font-mono shadow-editorial-sm">
                       <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-cyan-400" />
-                        <span className="text-white font-bold">
+                        <FileText className="w-4 h-4 text-forest" />
+                        <span className="text-editorial-text font-bold">
                           {(selectedReportData as any).filename || "Saved Telemetry Report"}
                         </span>
                       </div>
                       <button
                         onClick={handleNewUpload}
-                        className="text-cyan-400 hover:text-cyan-300 font-semibold underline flex items-center gap-1"
+                        className="text-forest hover:underline font-bold flex items-center gap-1"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Upload another CSV</span>
@@ -430,7 +536,7 @@ export default function DashboardPage() {
                     />
                   </div>
                 ) : (
-                  <div className="glass-panel rounded-2xl p-12 text-center text-slate-500">
+                  <div className="editorial-card p-12 text-center text-editorial-muted">
                     <p>Failed to retrieve stored report records.</p>
                   </div>
                 )}
@@ -440,11 +546,13 @@ export default function DashboardPage() {
             {/* AI Diagnostics Panel */}
             <AIMetricsPanel />
 
-            {/* Platform Metadata Footer */}
-            <div className="mt-10 py-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-              <p>Energy Intelligence Platform • Industrial Time-Series AI Engine</p>
-              <p className="font-mono text-[11px]">PyTorch LSTM • Isolation Forest • FastAPI</p>
-            </div>
+            {/* Platform Metadata Editorial Footer */}
+            <footer className="mt-12 py-6 border-t border-editorial-divider text-center text-xs text-editorial-muted flex flex-col sm:flex-row items-center justify-between gap-2">
+              <p>Energy Intelligence System • Clean Energy Analytics &amp; Climate Tech Platform</p>
+              <p className="font-mono text-[11px] text-forest font-semibold">
+                PyTorch LSTM • Isolation Forest • FastAPI Core
+              </p>
+            </footer>
           </main>
         </div>
       </div>

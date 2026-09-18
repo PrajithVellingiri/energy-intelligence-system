@@ -5,7 +5,6 @@ import AnomalyAlerts from "./AnomalyAlerts";
 import OptimizationPanel from "./OptimizationPanel";
 import EnergyScoreCard from "./EnergyScoreCard";
 import {
-  Upload,
   FileText,
   AlertTriangle,
   TrendingUp,
@@ -20,6 +19,7 @@ import {
   CheckCircle2,
   XCircle,
   Database,
+  Clock,
   Sparkles,
 } from "lucide-react";
 
@@ -269,24 +269,28 @@ export default function UploadAnalysisPanel({
     <div className="space-y-6">
       {/* Upload Dropzone Card (Visible when not viewing a saved report) */}
       {!isViewingSaved && (
-        <div className="glass-panel-elevated rounded-2xl p-6 sm:p-7 relative overflow-hidden border border-slate-700/80 shadow-2xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 rounded-xl flex items-center justify-center shadow-glow-cyan">
-                <Upload className="w-5 h-5 text-cyan-400" />
+        <div className="editorial-card-elevated p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-5 border-b border-editorial-divider">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-forest bg-forest-50 px-2 py-0.5 rounded border border-forest-100">
+                  Data Workspace
+                </span>
+                <span className="text-[11px] text-editorial-muted flex items-center gap-1 font-medium">
+                  <Clock className="w-3.5 h-3.5 text-solar" />
+                  Automated Frequency &amp; Schema Parser
+                </span>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-white tracking-wide">
-                  Ingest Telemetry &amp; Run AI Models
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Upload raw energy consumption CSVs. The system automatically normalizes timestamps, aligns frequencies, and triggers models.
-                </p>
-              </div>
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-editorial-text">
+                Import Facility Telemetry
+              </h3>
+              <p className="text-xs text-editorial-muted mt-1 max-w-2xl">
+                Upload raw energy consumption CSV records. The system normalizes timestamps, computes anomaly signatures, and executes deep-learning forecasting.
+              </p>
             </div>
 
-            <span className="text-[11px] font-semibold text-slate-400 bg-surface-elevated/80 border border-slate-700 px-3 py-1.5 rounded-lg self-start sm:self-auto">
-              Formats: CSV (any delimiter / column schema)
+            <span className="text-xs font-mono font-medium text-editorial-muted bg-ivory-100 border border-editorial-border px-3 py-1.5 rounded-lg self-start sm:self-auto">
+              Format: CSV (Comma, Semicolon, Tab)
             </span>
           </div>
 
@@ -294,12 +298,12 @@ export default function UploadAnalysisPanel({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all cursor-pointer ${
+            className={`border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center transition-all cursor-pointer ${
               isDragOver
-                ? "border-cyan-400 bg-cyan-500/10 scale-[1.005]"
+                ? "border-forest bg-forest-50/50"
                 : file
-                ? "border-cyan-500/50 bg-slate-900/60"
-                : "border-slate-700/80 hover:border-cyan-500/40 bg-slate-950/40"
+                ? "border-forest-400 bg-ivory-50"
+                : "border-editorial-border hover:border-forest-300 hover:bg-ivory-50/80 bg-white"
             }`}
             onClick={() => fileInputRef.current?.click()}
           >
@@ -311,27 +315,27 @@ export default function UploadAnalysisPanel({
               className="hidden"
             />
             <div className="max-w-md mx-auto">
-              <div className="w-12 h-12 rounded-2xl bg-surface-elevated flex items-center justify-center mx-auto mb-3 border border-slate-700 shadow-inner">
-                <FileText className={`w-6 h-6 ${file ? "text-cyan-400" : "text-slate-500"}`} />
+              <div className="w-12 h-12 rounded-2xl bg-ivory-100 border border-editorial-border flex items-center justify-center mx-auto mb-3 shadow-editorial-sm">
+                <FileText className={`w-6 h-6 ${file ? "text-forest" : "text-editorial-muted"}`} />
               </div>
               {file ? (
                 <div>
-                  <p className="text-base font-bold text-white flex items-center justify-center gap-1.5">
+                  <p className="text-base font-bold text-editorial-text flex items-center justify-center gap-1.5">
                     <span>{file.name}</span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-forest" />
                   </p>
-                  <p className="text-xs text-slate-400 mt-1 font-mono">
-                    {(file.size / 1024).toFixed(1)} KB • Ready for model pipeline
+                  <p className="text-xs text-editorial-muted mt-1 font-mono">
+                    {(file.size / 1024).toFixed(1)} KB • Staged for neural processing
                   </p>
-                  <p className="text-[11px] text-cyan-400 mt-2 underline">Click to choose different file</p>
+                  <p className="text-xs text-forest font-semibold mt-2 underline">Click to choose a different CSV</p>
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm font-semibold text-slate-200">
-                    Drag and drop your energy telemetry CSV here, or{" "}
-                    <span className="text-cyan-400 underline">browse files</span>
+                  <p className="text-sm font-semibold text-editorial-text">
+                    Drag and drop your energy telemetry dataset here, or{" "}
+                    <span className="text-forest font-bold underline">select CSV file</span>
                   </p>
-                  <p className="text-xs text-slate-500 mt-1.5">
+                  <p className="text-xs text-editorial-muted mt-1.5">
                     Supports building sub-meters, SCADA logs, solar inverters, and utility billing records
                   </p>
                 </div>
@@ -339,26 +343,26 @@ export default function UploadAnalysisPanel({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-5">
-            <div className="text-xs text-slate-400 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>Pipeline trains only on unseen datasets to conserve cloud compute</span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+            <div className="text-xs text-editorial-muted flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-solar" />
+              <span>Model weights load automatically from pre-trained checkpoints</span>
             </div>
 
             <button
               onClick={handleUpload}
               disabled={!file || loading}
-              className="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-40 text-white rounded-xl font-bold shadow-glow-cyan transition-all flex items-center justify-center gap-2 text-sm"
+              className="w-full sm:w-auto px-7 py-3 bg-forest hover:bg-forest-700 disabled:opacity-40 text-white rounded-xl font-bold shadow-editorial transition-all flex items-center justify-center gap-2 text-sm"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Processing Pipeline...</span>
+                  <span>Processing Telemetry...</span>
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4" />
-                  <span>Execute Analysis</span>
+                  <Zap className="w-4 h-4 text-solar" />
+                  <span>Execute Analysis &amp; Forecasting</span>
                 </>
               )}
             </button>
@@ -366,17 +370,17 @@ export default function UploadAnalysisPanel({
 
           {/* Dynamic AI Analysis Progress Indicator */}
           {loading && (
-            <div className="mt-4 p-4 rounded-xl bg-slate-900/80 border border-cyan-500/30 flex items-center gap-3 animate-pulse">
-              <Loader2 className="w-5 h-5 text-cyan-400 animate-spin shrink-0" />
-              <div className="text-xs text-cyan-300 font-mono font-medium">
+            <div className="mt-5 p-4 rounded-xl bg-ivory-100 border border-forest-200 flex items-center gap-3">
+              <Loader2 className="w-5 h-5 text-forest animate-spin shrink-0" />
+              <div className="text-xs text-forest font-mono font-medium">
                 {analysisStep || "Running AI models..."}
               </div>
             </div>
           )}
 
           {error && (
-            <div className="mt-4 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl p-3.5 flex items-start gap-2.5 text-xs">
-              <XCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div className="mt-5 bg-[#FDF2F2] border border-[#F5C6CB] text-[#9C2B2B] rounded-xl p-4 flex items-start gap-2.5 text-xs">
+              <XCircle className="w-4 h-4 text-[#D9534F] shrink-0 mt-0.5" />
               <p>{error}</p>
             </div>
           )}
@@ -387,7 +391,7 @@ export default function UploadAnalysisPanel({
       {result && (
         <div className="space-y-6">
           {/* Navigation Section Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-editorial-divider">
             {sections.map((s) => {
               const Icon = s.icon;
               const isActive = activeSection === s.id;
@@ -395,14 +399,15 @@ export default function UploadAnalysisPanel({
                 <button
                   key={s.id}
                   onClick={() => setActiveSection(s.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap border-b-2 -mb-px ${
                     isActive
-                      ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-glow-cyan"
-                      : "glass-panel text-slate-400 hover:text-white hover:border-slate-600"
+                      ? "border-forest text-forest bg-white rounded-t-lg shadow-editorial-sm"
+                      : "border-transparent text-editorial-muted hover:text-editorial-text hover:bg-ivory-100/60"
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? "text-forest" : "text-editorial-muted"}`} />
                   <span>{s.label}</span>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-solar ml-1" />}
                 </button>
               );
             })}
@@ -412,59 +417,55 @@ export default function UploadAnalysisPanel({
           {activeSection === "summary" && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-cyan-500/30 transition-all">
-                  <div className="flex items-center justify-between text-slate-400 text-xs mb-1 font-medium">
-                    <span>Latest Reading</span>
-                    <Zap className="w-4 h-4 text-cyan-400" />
-                  </div>
-                  <p className="text-3xl font-black text-white tracking-tight">
+                <div className="editorial-card p-5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-editorial-muted block mb-1">
+                    Terminal Recorded Load
+                  </span>
+                  <p className="text-3xl font-bold text-editorial-text tracking-tight font-mono">
                     {result.dashboard_summary.current_consumption.toFixed(1)}
-                    <span className="text-xs font-normal text-slate-400 ml-1.5">kWh</span>
+                    <span className="text-xs font-normal text-editorial-muted ml-1.5">kWh</span>
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-1">Terminal load value</p>
+                  <p className="text-[11px] text-editorial-muted mt-1">Latest observed telemetry</p>
                 </div>
 
-                <div className="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-blue-500/30 transition-all">
-                  <div className="flex items-center justify-between text-slate-400 text-xs mb-1 font-medium">
-                    <span>24h Average Demand</span>
-                    <Activity className="w-4 h-4 text-blue-400" />
-                  </div>
-                  <p className="text-3xl font-black text-blue-300 tracking-tight">
+                <div className="editorial-card p-5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-editorial-muted block mb-1">
+                    24h Rolling Average
+                  </span>
+                  <p className="text-3xl font-bold text-forest tracking-tight font-mono">
                     {result.dashboard_summary.avg_24h.toFixed(1)}
-                    <span className="text-xs font-normal text-slate-400 ml-1.5">kWh</span>
+                    <span className="text-xs font-normal text-editorial-muted ml-1.5">kWh</span>
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-1">Rolling daily baseline</p>
+                  <p className="text-[11px] text-editorial-muted mt-1">Operational baseline</p>
                 </div>
 
-                <div className="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-amber-500/30 transition-all">
-                  <div className="flex items-center justify-between text-slate-400 text-xs mb-1 font-medium">
-                    <span>Recorded Peak Load</span>
-                    <AlertTriangle className="w-4 h-4 text-amber-400" />
-                  </div>
-                  <p className="text-3xl font-black text-amber-300 tracking-tight">
+                <div className="editorial-card p-5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-editorial-muted block mb-1">
+                    Peak Recorded Demand
+                  </span>
+                  <p className="text-3xl font-bold text-solar-800 tracking-tight font-mono">
                     {result.dashboard_summary.max_24h.toFixed(1)}
-                    <span className="text-xs font-normal text-slate-400 ml-1.5">kWh</span>
+                    <span className="text-xs font-normal text-editorial-muted ml-1.5">kWh</span>
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-1">Maximum demand surge</p>
+                  <p className="text-[11px] text-editorial-muted mt-1">Maximum demand surge</p>
                 </div>
 
-                <div className="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-emerald-500/30 transition-all">
-                  <div className="flex items-center justify-between text-slate-400 text-xs mb-1 font-medium">
-                    <span>Recorded Off-Peak Low</span>
-                    <TrendingUp className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <p className="text-3xl font-black text-emerald-300 tracking-tight">
+                <div className="editorial-card p-5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-editorial-muted block mb-1">
+                    Off-Peak Demand Floor
+                  </span>
+                  <p className="text-3xl font-bold text-sage-800 tracking-tight font-mono">
                     {result.dashboard_summary.min_24h.toFixed(1)}
-                    <span className="text-xs font-normal text-slate-400 ml-1.5">kWh</span>
+                    <span className="text-xs font-normal text-editorial-muted ml-1.5">kWh</span>
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-1">Minimum demand floor</p>
+                  <p className="text-[11px] text-editorial-muted mt-1">Minimum base load</p>
                 </div>
               </div>
 
               {/* Data Range & Hash Strip */}
-              <div className="glass-panel rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 font-mono">
+              <div className="editorial-card p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-editorial-muted font-mono">
                 <div className="flex items-center gap-2">
-                  <Database className="w-4 h-4 text-cyan-400" />
+                  <Database className="w-4 h-4 text-forest" />
                   <span>
                     Dataset Scope: {result.dashboard_summary.total_records.toLocaleString()} records •{" "}
                     {new Date(result.dashboard_summary.date_range.start).toLocaleDateString()} to{" "}
@@ -472,13 +473,13 @@ export default function UploadAnalysisPanel({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[10px]">
+                  <span className="px-2 py-0.5 rounded bg-ivory-100 border border-editorial-border text-editorial-text text-[10px]">
                     SHA-256: {result.data_hash.substring(0, 10)}...
                   </span>
                   {result.already_trained_before ? (
-                    <span className="text-slate-400 text-[11px]">Cached Model State</span>
+                    <span className="text-editorial-muted text-[11px]">Cached Model State</span>
                   ) : (
-                    <span className="text-emerald-400 text-[11px] font-semibold">Trained Model Weights</span>
+                    <span className="text-forest text-[11px] font-semibold">Trained Model Weights</span>
                   )}
                 </div>
               </div>
@@ -496,80 +497,80 @@ export default function UploadAnalysisPanel({
 
           {/* Tab 2: Auto-Identified Data Fields */}
           {activeSection === "detection" && (
-            <div className="glass-panel-elevated rounded-2xl p-6 sm:p-7 relative overflow-hidden">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-11 h-11 bg-cyan-500/20 border border-cyan-500/30 rounded-xl flex items-center justify-center shadow-glow-cyan">
-                  <Database className="w-5 h-5 text-cyan-400" />
+            <div className="editorial-card-elevated p-6 sm:p-7">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-editorial-divider">
+                <div className="w-10 h-10 bg-forest-50 border border-forest-100 rounded-xl flex items-center justify-center">
+                  <Database className="w-5 h-5 text-forest" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white tracking-wide">
+                  <h3 className="text-lg font-bold text-editorial-text tracking-tight">
                     Auto-Identified Telemetry Schema
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-editorial-muted mt-0.5">
                     Heuristic engine parsed column semantics and normalized time alignment
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-                  <p className="text-xs text-slate-400 font-medium mb-1">Datetime Timestamp Column</p>
-                  <p className="text-base font-bold text-cyan-300 font-mono">
+                <div className="bg-ivory-100 border border-editorial-border rounded-xl p-4">
+                  <p className="text-[11px] uppercase font-bold text-editorial-muted mb-1">Datetime Timestamp</p>
+                  <p className="text-base font-bold text-forest font-mono">
                     {result.detected_columns.datetime_column}
                   </p>
                 </div>
 
-                <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-                  <p className="text-xs text-slate-400 font-medium mb-1">Identified Energy Stream</p>
-                  <p className="text-base font-bold text-white font-mono truncate">
+                <div className="bg-ivory-100 border border-editorial-border rounded-xl p-4">
+                  <p className="text-[11px] uppercase font-bold text-editorial-muted mb-1">Energy Stream Column</p>
+                  <p className="text-base font-bold text-editorial-text font-mono truncate">
                     {result.detected_columns.energy_columns.join(", ")}
                   </p>
                 </div>
 
-                <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-                  <p className="text-xs text-slate-400 font-medium mb-1">Environmental / Weather</p>
-                  <p className="text-base font-bold text-slate-300 font-mono truncate">
+                <div className="bg-ivory-100 border border-editorial-border rounded-xl p-4">
+                  <p className="text-[11px] uppercase font-bold text-editorial-muted mb-1">Environmental / Weather</p>
+                  <p className="text-base font-bold text-editorial-text font-mono truncate">
                     {result.detected_columns.weather_columns.length > 0
                       ? result.detected_columns.weather_columns.join(", ")
                       : "None (Autonomously simulated)"}
                   </p>
                 </div>
 
-                <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-                  <p className="text-xs text-slate-400 font-medium mb-1">Telemetry Unit &amp; Rate</p>
-                  <p className="text-base font-bold text-emerald-300 font-mono">
-                    {result.detected_columns.unit_detected} • {result.detected_columns.frequency_minutes} min interval
+                <div className="bg-ivory-100 border border-editorial-border rounded-xl p-4">
+                  <p className="text-[11px] uppercase font-bold text-editorial-muted mb-1">Sampling Cadence</p>
+                  <p className="text-base font-bold text-sage-800 font-mono">
+                    {result.detected_columns.unit_detected} • {result.detected_columns.frequency_minutes}m frequency
                   </p>
                 </div>
               </div>
 
               {/* Statistical Distribution */}
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-4">
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">
-                  Telemetry Distribution Statistics
+              <div className="border border-editorial-border rounded-xl p-5 bg-white">
+                <h4 className="text-xs font-bold text-editorial-text uppercase tracking-wider mb-4">
+                  Telemetry Statistical Distribution
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-                    <p className="text-slate-500 mb-0.5">Arithmetic Mean</p>
-                    <p className="text-base font-bold text-white font-mono">
+                  <div className="p-3 bg-ivory-100 rounded-lg border border-editorial-border">
+                    <p className="text-editorial-muted mb-0.5">Arithmetic Mean</p>
+                    <p className="text-base font-bold text-forest font-mono">
                       {result.detected_columns.energy_stats.mean.toFixed(2)} kWh
                     </p>
                   </div>
-                  <div className="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-                    <p className="text-slate-500 mb-0.5">Standard Deviation</p>
-                    <p className="text-base font-bold text-white font-mono">
+                  <div className="p-3 bg-ivory-100 rounded-lg border border-editorial-border">
+                    <p className="text-editorial-muted mb-0.5">Standard Deviation</p>
+                    <p className="text-base font-bold text-editorial-text font-mono">
                       {result.detected_columns.energy_stats.std.toFixed(2)} kWh
                     </p>
                   </div>
-                  <div className="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-                    <p className="text-slate-500 mb-0.5">Global Minimum</p>
-                    <p className="text-base font-bold text-emerald-400 font-mono">
+                  <div className="p-3 bg-ivory-100 rounded-lg border border-editorial-border">
+                    <p className="text-editorial-muted mb-0.5">Global Minimum</p>
+                    <p className="text-base font-bold text-sage-800 font-mono">
                       {result.detected_columns.energy_stats.min.toFixed(2)} kWh
                     </p>
                   </div>
-                  <div className="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-                    <p className="text-slate-500 mb-0.5">Global Maximum</p>
-                    <p className="text-base font-bold text-amber-400 font-mono">
+                  <div className="p-3 bg-ivory-100 rounded-lg border border-editorial-border">
+                    <p className="text-editorial-muted mb-0.5">Global Maximum</p>
+                    <p className="text-base font-bold text-solar-800 font-mono">
                       {result.detected_columns.energy_stats.max.toFixed(2)} kWh
                     </p>
                   </div>
@@ -616,17 +617,17 @@ function FixSuggestionsSection({ data }: { data: FixSuggestions }) {
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
 
   return (
-    <div className="glass-panel-elevated rounded-2xl p-6 sm:p-7 relative overflow-hidden">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-11 h-11 bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl flex items-center justify-center shadow-glow-amber">
-          <Wrench className="w-5 h-5 text-amber-400" />
+    <div className="editorial-card-elevated p-6 sm:p-7">
+      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-editorial-divider">
+        <div className="w-10 h-10 bg-solar-50 border border-solar-200 rounded-xl flex items-center justify-center">
+          <Wrench className="w-5 h-5 text-solar" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-white tracking-wide">
-            Automated Engineering Remediation
+          <h3 className="text-lg font-bold text-editorial-text tracking-tight">
+            Prescriptive Remediation &amp; Engineering Plan
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Prescriptive corrections derived from anomaly cluster severity and temporal occurrence
+          <p className="text-xs text-editorial-muted mt-0.5">
+            Operational recommendations categorized by anomaly severity clusters and time of occurrence
           </p>
         </div>
       </div>
@@ -634,20 +635,20 @@ function FixSuggestionsSection({ data }: { data: FixSuggestions }) {
       {/* Priority Actions */}
       {data.priority_actions && data.priority_actions.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <AlertTriangle className="w-4 h-4" />
+          <h4 className="text-xs font-bold text-[#9C2B2B] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4 text-[#D9534F]" />
             Immediate Priority Corrective Actions
           </h4>
           <div className="space-y-2.5">
             {data.priority_actions.map((act, i) => (
               <div
                 key={i}
-                className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3.5 text-xs text-rose-200 flex items-start gap-3"
+                className="bg-[#FDF2F2] border border-[#F5C6CB] rounded-xl p-3.5 text-xs text-[#9C2B2B] flex items-start gap-3"
               >
-                <span className="w-5 h-5 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-[10px] font-bold text-rose-300 shrink-0">
+                <span className="w-5 h-5 rounded-full bg-[#D9534F] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                   {i + 1}
                 </span>
-                <p className="leading-relaxed mt-0.5">{act}</p>
+                <p className="leading-relaxed mt-0.5 font-medium">{act}</p>
               </div>
             ))}
           </div>
@@ -657,8 +658,8 @@ function FixSuggestionsSection({ data }: { data: FixSuggestions }) {
       {/* Categorized Anomaly Accordions */}
       {data.categories && data.categories.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
-            Anomaly Class Breakdown
+          <h4 className="text-xs font-bold text-editorial-muted uppercase tracking-wider mb-3">
+            Identified Anomaly Categories
           </h4>
           <div className="space-y-2">
             {data.categories.map((cat) => {
@@ -666,26 +667,26 @@ function FixSuggestionsSection({ data }: { data: FixSuggestions }) {
               return (
                 <div
                   key={cat.type}
-                  className="bg-slate-900/60 border border-slate-800/80 rounded-xl overflow-hidden"
+                  className="editorial-card overflow-hidden"
                 >
                   <button
                     onClick={() => setExpandedCat(isExpanded ? null : cat.type)}
-                    className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-800/40 transition-colors"
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-ivory-50 transition-colors"
                   >
                     <div>
-                      <p className="text-sm font-bold text-white">{cat.label}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-sm font-bold text-editorial-text">{cat.label}</p>
+                      <p className="text-xs text-editorial-muted mt-0.5">
                         {cat.count} occurrences • Severity: {cat.avg_severity.toFixed(3)}
                       </p>
                     </div>
                     {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-slate-400" />
+                      <ChevronUp className="w-4 h-4 text-editorial-muted" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                      <ChevronDown className="w-4 h-4 text-editorial-muted" />
                     )}
                   </button>
                   {isExpanded && (
-                    <div className="px-4 pb-4 pt-1 border-t border-slate-800 text-xs text-slate-300 leading-relaxed">
+                    <div className="px-4 pb-4 pt-1 border-t border-editorial-divider text-xs text-editorial-muted leading-relaxed bg-ivory-50">
                       {cat.description}
                     </div>
                   )}
@@ -699,17 +700,17 @@ function FixSuggestionsSection({ data }: { data: FixSuggestions }) {
       {/* Recommended Fixes */}
       {data.fix_suggestions && data.fix_suggestions.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" />
+          <h4 className="text-xs font-bold text-forest uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-forest" />
             Tactical Engineering Steps
           </h4>
           <div className="space-y-2">
             {data.fix_suggestions.map((fix, idx) => (
               <div
                 key={idx}
-                className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 flex items-start gap-2.5"
+                className="bg-white border border-editorial-border rounded-xl p-3.5 text-xs text-editorial-text flex items-start gap-2.5 shadow-editorial-sm"
               >
-                <span className="text-cyan-400 font-mono font-bold mt-0.5 shrink-0">#{idx + 1}</span>
+                <span className="text-forest font-mono font-bold mt-0.5 shrink-0">#{idx + 1}</span>
                 <p className="leading-relaxed">{fix}</p>
               </div>
             ))}
@@ -720,14 +721,14 @@ function FixSuggestionsSection({ data }: { data: FixSuggestions }) {
       {/* General Best Practices */}
       {data.general_suggestions && data.general_suggestions.length > 0 && (
         <div>
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+          <h4 className="text-xs font-bold text-editorial-muted uppercase tracking-wider mb-3">
             Long-Term Operational Guidelines
           </h4>
           <div className="space-y-2">
             {data.general_suggestions.map((sug, idx) => (
               <div
                 key={idx}
-                className="bg-surface-elevated/30 border border-slate-800/60 rounded-xl p-3 text-xs text-slate-400"
+                className="bg-ivory-100 border border-editorial-border rounded-xl p-3 text-xs text-editorial-muted"
               >
                 {sug}
               </div>

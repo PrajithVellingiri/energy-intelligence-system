@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
 import { authAPI } from "../lib/api";
@@ -40,96 +40,100 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090e] bg-grid-pattern flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
-      {/* Ambient background glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-blue-600/10 blur-[120px] pointer-events-none" />
-
-      {/* Back to Home button */}
+    <div className="min-h-screen bg-ivory flex items-center justify-center p-4 sm:p-6 relative">
+      {/* Return to Home link */}
       <Link
         to="/"
-        className="absolute top-6 left-6 flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors px-3 py-2 rounded-xl glass-panel hover:border-slate-600"
+        className="absolute top-6 left-6 flex items-center gap-2 text-xs font-bold text-editorial-muted hover:text-forest transition-colors px-3 py-2 rounded-xl bg-white border border-editorial-border shadow-editorial-sm"
       >
-        <Home className="w-4 h-4" />
+        <Home className="w-3.5 h-3.5" />
         <span>Return Home</span>
       </Link>
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Header Branding */}
+      <div className="w-full max-w-md">
+        {/* Editorial Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl mb-3.5 shadow-glow-cyan">
-            <Zap className="w-7 h-7 text-white" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-forest rounded-2xl mb-3 shadow-editorial-sm text-white">
+            <Zap className="w-6 h-6 text-solar" />
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Create Console Account</h1>
-          <p className="text-xs text-slate-400 mt-1">Join the AI Energy Intelligence Platform</p>
+          <h1 className="text-2xl font-bold text-editorial-text tracking-tight">
+            ENERGY INTELLIGENCE
+          </h1>
+          <p className="text-xs text-editorial-muted mt-1">
+            Create Facility Operator Account
+          </p>
         </div>
 
         {/* Form Card */}
-        <div className="glass-panel-elevated rounded-2xl p-7 sm:p-8 border border-slate-700/80 shadow-2xl">
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-white">Register Organization</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Deploy analytics and telemetry ingestion</p>
+        <div className="editorial-card-elevated p-7 sm:p-8">
+          <div className="mb-6 pb-4 border-b border-editorial-divider">
+            <h2 className="text-lg font-bold text-editorial-text">Operator Registration</h2>
+            <p className="text-xs text-editorial-muted mt-0.5">Deploy analytics and telemetry ingestion vault</p>
           </div>
 
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 px-3.5 py-2.5 rounded-xl mb-5 text-xs flex items-start gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-rose-500 mt-1 shrink-0" />
+            <div className="bg-[#FDF2F2] border border-[#F5C6CB] text-[#9C2B2B] px-3.5 py-2.5 rounded-xl mb-5 text-xs flex items-start gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-[#D9534F] mt-1 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-editorial-muted mb-1.5">
                 Username / Operator ID
               </label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-editorial-muted" />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
-                  placeholder="e.g. grid_lead"
+                  className="w-full bg-ivory-50 border border-editorial-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-editorial-text placeholder-editorial-muted/70 focus:outline-none focus:ring-1 focus:ring-forest focus:border-forest transition-all"
+                  placeholder="e.g. grid_operator"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-editorial-muted mb-1.5">
                 Work Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-editorial-muted" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
-                  placeholder="operator@facility.com"
+                  className="w-full bg-ivory-50 border border-editorial-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-editorial-text placeholder-editorial-muted/70 focus:outline-none focus:ring-1 focus:ring-forest focus:border-forest transition-all"
+                  placeholder="name@organization.com"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Password (min 6 characters)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-editorial-muted">
+                  Account Password
+                </label>
+                <span className="text-[11px] text-editorial-muted">Min 6 chars</span>
+              </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-editorial-muted" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
-                  placeholder="Create secure password"
+                  className="w-full bg-ivory-50 border border-editorial-border rounded-xl pl-10 pr-10 py-2.5 text-sm text-editorial-text placeholder-editorial-muted/70 focus:outline-none focus:ring-1 focus:ring-forest focus:border-forest transition-all"
+                  placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-editorial-muted hover:text-editorial-text"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -139,33 +143,25 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-glow-cyan transition-all flex items-center justify-center gap-2 text-sm"
+              className="w-full py-3 bg-forest hover:bg-forest-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-editorial transition-all flex items-center justify-center gap-2 text-sm mt-6"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              <span>{loading ? "Registering Operator..." : "Create Account &amp; Access Vault"}</span>
+              <ArrowRight className="w-4 h-4 text-solar" />
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-slate-800 text-center">
-            <p className="text-xs text-slate-400">
-              Already have an account?{" "}
-              <Link to="/login" className="text-cyan-400 hover:text-cyan-300 font-semibold underline">
-                Sign In
-              </Link>
-            </p>
+          <div className="mt-6 text-center text-xs text-editorial-muted">
+            Already have an active account?{" "}
+            <Link to="/login" className="text-forest font-bold hover:underline">
+              Sign in here
+            </Link>
           </div>
         </div>
 
-        {/* Security badge footer */}
-        <div className="flex items-center justify-center gap-2 mt-6 text-[11px] text-slate-500">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Zero-Telemetry Leakage • AES Secured</span>
+        {/* Security badge */}
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-editorial-muted mt-6">
+          <ShieldCheck className="w-3.5 h-3.5 text-forest" />
+          <span>Secure Operator Registration</span>
         </div>
       </div>
     </div>

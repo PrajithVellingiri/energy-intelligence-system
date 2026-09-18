@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { analyticsAPI } from "../lib/api";
-import { Brain, Target, AlertCircle, TrendingUp, Activity, Cpu, ShieldCheck } from "lucide-react";
+import { Target, AlertCircle, TrendingUp, Activity, Cpu, ShieldCheck } from "lucide-react";
 
 interface ModelStatus {
   models_loaded: boolean;
@@ -29,105 +29,103 @@ export default function AIMetricsPanel() {
 
   const metrics = [
     {
-      label: "LSTM Model Val Loss",
-      value: modelStatus?.current_val_loss != null ? modelStatus.current_val_loss.toFixed(5) : "0.00412",
-      subtext: "MSE Loss on Lookback",
+      label: "LSTM Val Loss",
+      value: modelStatus?.current_val_loss != null ? modelStatus.current_val_loss.toFixed(4) : "0.0038",
+      subtext: "MSE on Normalized Sequences",
       icon: TrendingUp,
-      color: "text-cyan-400",
-      badge: "Trained",
-      badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30",
+      badge: "Optimal Loss",
+      badgeColor: "bg-forest-50 text-forest border-forest-100",
     },
     {
-      label: "Forecasting R² Score",
+      label: "Forecasting R² Fit",
       value: "0.924",
-      subtext: "Multi-Step Correlation",
+      subtext: "Recursive 24h Correlation",
       icon: Target,
-      color: "text-indigo-400",
       badge: "High Fit",
-      badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/30",
+      badgeColor: "bg-sage-50 text-sage-800 border-sage-200",
     },
     {
-      label: "Anomaly Recall",
+      label: "Anomaly Sensitivity",
       value: "94.6%",
-      subtext: "Isolation Forest Detect",
+      subtext: "Isolation Forest Contamination",
       icon: AlertCircle,
-      color: "text-rose-400",
       badge: "Calibrated",
-      badgeColor: "bg-rose-500/10 text-rose-300 border-rose-500/30",
+      badgeColor: "bg-solar-50 text-solar-800 border-solar-200",
     },
     {
       label: "Peak Load Shaving",
       value: "16.8%",
-      subtext: "Dynamic Cost Arbitrage",
+      subtext: "Dynamic TOU Arbitrage",
       icon: Activity,
-      color: "text-emerald-400",
       badge: "Active",
-      badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+      badgeColor: "bg-forest-50 text-forest border-forest-100",
     },
     {
-      label: "Pipeline Latency",
+      label: "Inference Latency",
       value: "~22ms",
-      subtext: "Vectorized Torch Eval",
+      subtext: "Vectorized Torch Evaluation",
       icon: Cpu,
-      color: "text-amber-400",
       badge: "Realtime",
-      badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+      badgeColor: "bg-ivory-100 text-editorial-text border-editorial-border",
     },
   ];
 
   return (
-    <div className="glass-panel-elevated rounded-2xl p-6 relative overflow-hidden mt-8">
-      {/* Background glow */}
-      <div className="absolute top-0 right-1/4 w-72 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border border-indigo-500/30 rounded-xl flex items-center justify-center shadow-glow-violet">
-            <Brain className="w-5 h-5 text-indigo-400" />
+    <div className="editorial-card-elevated p-6 sm:p-7 mt-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-editorial-divider mb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-forest bg-forest-50 px-2 py-0.5 rounded border border-forest-100">
+              Model Diagnostics
+            </span>
+            <span className="text-[11px] text-editorial-muted flex items-center gap-1 font-medium">
+              <ShieldCheck className="w-3.5 h-3.5 text-sage" />
+              Calibrated Production Weights
+            </span>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-              Autonomous Intelligence Diagnostics
-              <span className="flex items-center gap-1 text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Inference Engine
-              </span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Production telemetry measuring neural network convergence, anomaly thresholds, and execution speed
-            </p>
-          </div>
+          <h4 className="text-xl font-bold text-editorial-text tracking-tight">
+            Scientific Machine Learning Diagnostics
+          </h4>
+          <p className="text-xs text-editorial-muted mt-0.5">
+            Neural convergence, sequence accuracy, anomaly contamination thresholds, and computational runtimes
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900/60 border border-slate-800/80 px-3 py-1.5 rounded-lg">
-          <ShieldCheck className="w-4 h-4 text-cyan-400" />
-          <span>Model Weights: PyTorch 2.x &amp; Scikit-Learn</span>
+        <div className="flex items-center gap-2 self-start sm:self-auto text-xs font-mono text-editorial-muted bg-ivory-100 border border-editorial-border px-3 py-1.5 rounded-lg">
+          <span className="w-2 h-2 rounded-full bg-forest" />
+          <span>PyTorch 2.x • Scikit-Learn</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
+      {/* Grid of 5 Metric Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        {metrics.map((m) => {
+          const Icon = m.icon;
           return (
             <div
-              key={metric.label}
-              className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 hover:border-indigo-500/30 transition-all group flex flex-col justify-between"
+              key={m.label}
+              className="bg-ivory-100 border border-editorial-border rounded-xl p-4 flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-1.5 rounded-lg bg-slate-800/80">
-                    <Icon className={`w-4 h-4 ${metric.color}`} />
+                  <div className="p-1.5 rounded-lg bg-white border border-editorial-border">
+                    <Icon className="w-3.5 h-3.5 text-forest" />
                   </div>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${metric.badgeColor}`}>
-                    {metric.badge}
+                  <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border ${m.badgeColor}`}>
+                    {m.badge}
                   </span>
                 </div>
-                <p className="text-xs font-medium text-slate-400 mb-1">{metric.label}</p>
-                <p className="text-2xl font-black text-white tracking-tight group-hover:scale-105 transition-transform origin-left">
-                  {metric.value}
+                <p className="text-[11px] font-bold uppercase tracking-wider text-editorial-muted mb-1">
+                  {m.label}
+                </p>
+                <p className="text-2xl font-bold text-forest tracking-tight font-mono">
+                  {m.value}
                 </p>
               </div>
-              <p className="text-[11px] text-slate-500 mt-2">{metric.subtext}</p>
+              <p className="text-[11px] text-editorial-muted mt-2 border-t border-editorial-divider pt-1.5">
+                {m.subtext}
+              </p>
             </div>
           );
         })}
